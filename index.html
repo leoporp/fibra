@@ -84,6 +84,14 @@ button{cursor:pointer}
 .hrow i{display:block;height:14px;border-radius:3px;background:var(--line);opacity:.6}
 .hrow i.on{background:var(--accent);opacity:1}
 .hrow i.l1{background:var(--accent);opacity:.2}.hrow i.l2{background:var(--accent);opacity:.4}.hrow i.l3{background:var(--accent);opacity:.6}.hrow i.l4{background:var(--accent);opacity:.8}.hrow i.l5{background:var(--accent);opacity:1}
+.fund{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--fiber);border-radius:14px;padding:14px}
+.fundtop{display:flex;align-items:baseline;gap:8px}
+.fundtop b{font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.fundtop b.neg{color:var(--warn)}
+.spends{margin-top:10px;border-top:1px solid var(--line)}
+.spend{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+.spend .sa{display:flex;align-items:center;gap:4px;flex:none}
+.next.fundline{border-left-color:var(--fiber)}
 .days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .dayrow b{display:block;font-size:15px}
@@ -470,23 +478,15 @@ const SEED_SESS = [
  {id:"sC", name:"Brazo completo", items:["ecc_ext","tri_oh","pinch","grip","row"]},
  {id:"sD", name:"Dedos y control", items:["iso_ext","fingext","pinch","prosup","extrot"]}
 ];
-const SEED_RW = [
- {type:"weeks", n:1, text:"Noche de anime o película de horror, sin culpa"},
- {type:"level", n:3, text:"Un skin o juego nuevo: Wild Rift, AoE2 u Overcooked"},
- {type:"weeks", n:2, text:"Sushi o comida vietnamita en un sitio que te guste"},
- {type:"level", n:5, text:"Partituras o un método nuevo de piano"},
- {type:"weeks", n:4, text:"Masaje de descarga: antebrazos, cuello y espalda"},
- {type:"level", n:7, text:"Un taller o clase especial de danza"},
- {type:"weeks", n:8, text:"Paseo de un día en moto fuera de Bogotá, con reel incluido"},
- {type:"level", n:9, text:"El bajo que tienes en la mira"}
-];
+const SEED_RW = [];
+const OLD_RW = ["Noche de anime o película de horror, sin culpa", "Un skin o juego nuevo: Wild Rift, AoE2 u Overcooked", "Sushi o comida vietnamita en un sitio que te guste", "Partituras o un método nuevo de piano", "Masaje de descarga: antebrazos, cuello y espalda", "Un taller o clase especial de danza", "Paseo de un día en moto fuera de Bogotá, con reel incluido", "El bajo que tienes en la mira"];
 
 /* ---------- state ---------- */
 const PER_ARM = {ecc_ext:1, iso_ext:1, flex:1, prosup:1, radial:1, grip:1, pinch:1};
 const OLD_LOAD = {ecc_ext:"1 kg", iso_ext:"1 kg o la otra mano", flex:"1 kg", prosup:"Martillo o mancuerna tomada de un extremo", radial:"Martillo", grip:"Pelota antiestrés", fingext:"Liga de pelo o banda pequeña", pinch:"Pelota o plastilina", tri_push:"Banda ligera", tri_oh:"2 kg", row:"Banda", extrot:"Banda ligera"};
 const COMPL = {flex:1, prosup:1, radial:1, grip:1, fingext:1, pinch:1, tri_push:1, tri_oh:1, row:1, extrot:1};
 const SEC_PER_REP = {ecc_ext:5, flex:3, prosup:4, radial:3.5, grip:7, fingext:2, pinch:4, tri_push:3, tri_oh:3.5, row:3.5, extrot:3.5};
-function blank(){ return {v:7, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
+function blank(){ return {v:8, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
 function migrate(s){
   s = Object.assign(blank(), s);
   if (!s.sessions || !s.sessions.length){
@@ -510,15 +510,18 @@ function migrate(s){
     for (const e of s.exercises){ const se = SEED_EX.find(x => x.id === e.id);
       if (se && OLD_LOAD[e.id] && e.load === OLD_LOAD[e.id]){ e.name = se.name; e.load = se.load; e.notes = se.notes; e.perArm = !!PER_ARM[e.id]; } }
     s.equipV7 = true; }
-  s.v = 7;
+  if (!s.fundV8){ s.fundStart = s.fundStart || key(new Date()); s.spends = s.spends || [];
+    s.rewards = (s.rewards || []).filter(r => !OLD_RW.includes(r.text)); s.fundV8 = true; }
+  if (!Array.isArray(s.spends)) s.spends = [];
+  s.v = 8;
   return s;
 }
 let state = blank(), storedV = 0;
 try { const raw = localStorage.getItem(LS_KEY); if (raw){ state = JSON.parse(raw); storedV = state.v || 1; } } catch(e) {}
 state = migrate(state);
 let lastDoneId = null;
-let tab = "hoy", showAllRw = false, writing = false, pendingWrite = false, timer = null;
-const CUR_V = 7, CFG = window.FIBRA_CONFIG || {};
+let tab = "hoy", showAllRw = false, showAllSp = false, writing = false, pendingWrite = false, timer = null;
+const CUR_V = 8, CFG = window.FIBRA_CONFIG || {};
 let sb = null, session = null, lastSync = 0, dirty = false;
 const cloudReady = () => !!(sb && session);
 const canMedia = cloudReady;
@@ -712,6 +715,17 @@ function xp(){
   return x;
 }
 const threshold = n => 75*n*(n-1);
+const FUND_DAY = 5000, FUND_WEEK = 10000;
+const money = n => (n < 0 ? "−$" : "$") + Math.abs(Math.round(n)).toLocaleString("es-CO");
+function fund(){
+  const start = state.fundStart || key(new Date());
+  let days = 0, weeks = 0;
+  for (const k of Object.keys(state.logs)) if (k >= start && dayStats(k).counts) days++;
+  for (let m = monday(parseKey(start)), end = monday(new Date()); m <= end; m = addDays(m, 7)) if (weekMet(m)) weeks++;
+  const spent = (state.spends || []).reduce((a, x) => a + (Number(x.amount) || 0), 0), earned = days*FUND_DAY + weeks*FUND_WEEK;
+  return {days, weeks, earned, spent, left: earned - spent};
+}
+const bundleMsg = () => "Dale play a " + (state.bundle ? state.bundle : "tu audiolibro") + ". Solo suena mientras entrenas.";
 function level(){
   const x = xp(); let n = 1;
   while (n < LEVELS.length && x >= threshold(n+1)) n++;
@@ -728,7 +742,7 @@ function nextUndone(afterId){
   return null;
 }
 function setDone(id, val){
-  const tk = key(new Date()), before = level().n, wasFull = dayStats(tk).full, wasMet = weekMet(monday(new Date()));
+  const tk = key(new Date()), before = level().n, wasFull = dayStats(tk).full, wasCounts = dayStats(tk).counts, wasMet = weekMet(monday(new Date()));
   const readyBefore = rewardsSorted().filter(x => x.i.ok && !x.r.claimed).length;
   const sess = sessionFor(tk), log = ensureLog(tk);
   if (sess) log.session = sess.id;
@@ -740,7 +754,8 @@ function setDone(id, val){
   let msg = "";
   if (readyNow > readyBefore) msg = "Desbloqueaste una recompensa";
   else if (after > before) msg = "Subiste a nivel " + after + ": " + LEVELS[after-1];
-  else if (met && !wasMet) msg = "Meta de la semana cumplida. +50";
+  else if (met && !wasMet) msg = "Meta de la semana cumplida: +" + money(FUND_WEEK) + " a tu fondo";
+  else if (dayStats(tk).counts && !wasCounts) msg = "Día cumplido: +" + money(FUND_DAY) + " a tu fondo";
   else if (nowFull && !wasFull) msg = "Sesión completa. +20";
   return {msg, pop: nowFull && !wasFull};
 }
@@ -953,8 +968,10 @@ function viewHoy(pop){
 
   const rs = rewardsSorted(), ready = rs.find(x => x.i.ok && !x.r.claimed), nxt = rs.find(x => !x.i.ok);
   let nextHtml = "";
+  const fd = fund(), todayCounts = dayStats(tk).counts;
   if (ready) nextHtml = '<button class="next ready" data-go="progreso"><b>Tienes una recompensa por reclamar:</b> '+esc(ready.r.text)+'</button>';
-  else if (nxt) nextHtml = '<button class="next" data-go="progreso">Próxima recompensa: <b>'+esc(nxt.r.text)+'</b>. '+esc(nxt.i.left)+'.</button>';
+  nextHtml += '<button class="next fundline" data-go="progreso">Tu fondo: <b>'+money(fd.left)+'</b>. '+(todayCounts ? "Hoy ya sumaste "+money(FUND_DAY)+"." : "Hoy sumas "+money(FUND_DAY)+" si haces al menos la mitad de la sesión.")+'</button>';
+  if (!ready && nxt) nextHtml += '<button class="next" data-go="progreso">Próxima recompensa: <b>'+esc(nxt.r.text)+'</b>. '+esc(nxt.i.left)+'.</button>';
 
   if (sb && !session) nextHtml = '<button class="next cloud" data-login>Tus datos están solo en este celular. <b>Inicia sesión</b> para respaldarlos en la nube.</button>' + nextHtml;
   const nd = nudged();
@@ -964,7 +981,7 @@ function viewHoy(pop){
 
   let list = "";
   const firstUndone = nextUndone(null);
-  if (items.length && firstUndone) list = '<button class="btn block startbtn" data-detail="'+firstUndone+'">'+(done === 0 ? "Empezar la sesión" : "Seguir con: " + esc(exById(firstUndone).name))+'</button>';
+  if (items.length && firstUndone) list = '<button class="btn block startbtn" data-start data-detail="'+firstUndone+'">'+(done === 0 ? "Empezar la sesión" : "Seguir con: " + esc(exById(firstUndone).name))+'</button>';
   if (!items.length) list = '<div class="empty"><p style="margin-top:0">Esta sesión no tiene ejercicios todavía.</p><button class="btn" data-go="rutina">Editar rutina</button></div>';
   if (items.length) items.forEach((e, i) => {
     const on = !!log.done[e.id];
@@ -1122,20 +1139,27 @@ function viewProgreso(){
     const act = i.ok && !r.claimed ? '<button class="btn sm" data-claim="'+r.id+'">Reclamar</button>' : '<button class="icon-btn" data-delrw="'+r.id+'">Quitar</button>';
     rw += '<div class="rw'+cls+'"><div><div>'+esc(r.text)+'</div><div class="st">'+esc(status)+'</div></div><div class="act">'+act+'</div></div>';
   }
-  if (!state.rewards.length) rw = '<p class="muted small">Ponte premios reales: algo que te guste y que no sabotee la recuperación.</p>';
+  if (!state.rewards.length) rw = '<p class="muted small" style="margin-top:0">Si se te ocurre un premio especial por semanas seguidas o por nivel, agrégalo aquí. Por ahora, tu fondo hace ese trabajo.</p>';
+  const fd = fund(), sp = (state.spends || []).slice().reverse();
+  const spends = sp.slice(0, showAllSp ? sp.length : 4).map(x => '<div class="spend"><span>'+esc(x.what || "Gusto")+' <span class="muted small">'+esc(fmtShort(x.d))+'</span></span><span class="sa"><b>'+money(x.amount)+'</b><button class="icon-btn" data-delspend="'+x.id+'">Quitar</button></span></div>').join("");
+  const fundHtml = '<h2>Tu fondo</h2><div class="fund"><div class="fundtop"><b'+(fd.left < 0 ? ' class="neg"' : '')+'>'+money(fd.left)+'</b><span class="small muted">'+(fd.left < 0 ? "te pasaste" : "disponibles")+'</span></div>'+
+    '<p class="small muted" style="margin:4px 0 0">Ganaste '+money(fd.earned)+' ('+fd.days+(fd.days === 1 ? " día" : " días")+' y '+fd.weeks+(fd.weeks === 1 ? " semana cumplida" : " semanas cumplidas")+') y gastaste '+money(fd.spent)+'.</p>'+
+    '<p class="small" style="margin:10px 0 0">'+money(FUND_DAY)+' por cada día que cuenta para tu meta y '+money(FUND_WEEK)+' por cada semana cumplida. <b>Tus gustos salen de aquí y de ningún otro lado.</b> Pásalo cada semana a un bolsillo aparte.</p>'+
+    (spends ? '<div class="spends">'+spends+'</div>'+(sp.length > 4 ? '<button class="icon-btn" data-allsp>'+(showAllSp ? "Ver menos" : "Ver todos ("+sp.length+")")+'</button>' : '') : '')+
+    '<div class="row" style="margin-top:12px"><button class="btn" data-spend>Registrar un gusto</button></div></div>';
   return '<h1>Tus tendones, nivel '+L.n+'.</h1>'+
     '<div class="fibers">'+fibersSvg(L.n)+
       '<div class="lvl"><b>'+LEVELS[L.n-1]+'</b><span class="small muted">'+L.x+' pts</span></div>'+
       '<div class="bar"><span style="width:'+pct+'%"></span></div>'+
       '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p></div>'+
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
-    '<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
+    fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
     '<h2>Constancia y dolor, 28 días</h2><div class="chart">'+chartSvg()+
       '<div class="legend"><span><i style="background:var(--accent)"></i>Ejercicios hechos</span><span><i style="background:var(--ink)"></i>Dolor del brazo peor (0 a 10)</span></div></div>'+
     '<h2>Hábitos, 28 días</h2>'+habitsHtml()+
     '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
     insight()+
-    '<h2>Cómo sumas puntos</h2><p class="small muted">10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p>';
+    '<h2>Cómo sumas puntos</h2><p class="small muted">10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Aparte, tu fondo suma plata real. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p>';
 }
 
 function santiagoText(){
@@ -1184,6 +1208,8 @@ function viewRutina(){
     '<div class="row" style="margin-top:8px"><button class="btn ghost" data-copy>Copiar mensaje</button></div>'+
     '<h2>Meta semanal</h2><p class="small muted" style="margin-top:0">Días por semana que cuentan como cumplidos. Mejor una meta que sostengas que una perfecta.</p>'+
     '<div class="stepper"><button data-goal="-1" aria-label="Bajar meta">−</button><b>'+state.weeklyGoal+'</b><button data-goal="1" aria-label="Subir meta">+</button><span class="muted">días</span></div>'+
+    '<h2>Para escuchar entrenando</h2><p class="small muted" style="margin-top:0">Un audiolibro o podcast que solo escuchas durante las sesiones. Te lo recuerdo al empezar.</p>'+
+    '<label class="f"><input type="text" id="bundle" value="'+esc(state.bundle || "")+'" placeholder="Ej: Aniquilación, de Jeff VanderMeer"></label>'+
     '<h2>Descanso entre series</h2>'+
     '<div class="stepper"><button data-rest="-15" aria-label="Menos descanso">−</button><b>'+state.restSec+'</b><button data-rest="15" aria-label="Más descanso">+</button><span class="muted">segundos</span></div>';
 }
@@ -1350,6 +1376,13 @@ function drawSession(){
     (draft.id && state.sessions.length > 1 ? '<button class="btn danger" data-delsess="'+draft.id+'">Eliminar</button>' : '')+'</div>', draft.id ? "[data-savesess]" : "#s-name");
   const n = $("#s-name"); n.addEventListener("input", () => { draft.name = n.value; });
 }
+function spendForm(){
+  openSheet('<div class="sh"><h3>Registrar un gusto</h3><button class="btn ghost sm" data-close>Cancelar</button></div>'+
+    '<p class="muted small">Disponible en tu fondo: '+money(fund().left)+'</p>'+
+    '<label class="f"><span>En qué</span><input type="text" id="sp-what" placeholder="Ej: sushi, un libro, cine"></label>'+
+    '<label class="f"><span>Cuánto, en pesos</span><input type="number" inputmode="numeric" min="0" step="1000" id="sp-amt" placeholder="Ej: 35000"></label>'+
+    '<div class="row"><button class="btn" data-savespend>Guardar</button></div>', "#sp-what");
+}
 function rewardForm(){
   openSheet('<div class="sh"><h3>Nueva recompensa</h3></div>'+
     '<label class="f"><span>Qué te vas a dar</span><input type="text" id="r-text" placeholder="Ej: el libro que tengo en la lista"></label>'+
@@ -1511,7 +1544,19 @@ document.addEventListener("click", ev => {
   if (d.snooze){ const e = exById(d.snooze); if (e){ e.progSnooze = key(addDays(new Date(), 7)); save(); drawDetail(); toast("Te lo recuerdo en una semana"); } return; }
   if (d.rest){ state.restSec = Math.min(180, Math.max(15, (state.restSec || 60) + Number(d.rest))); save(); render(); return; }
   if (d.next !== undefined){ stopTimer(); const nx = nextUndone(detailId); if (nx) openDetail(nx); return; }
-  if (d.detail){ openDetail(d.detail); return; }
+  if (d.detail){ openDetail(d.detail); if (d.start !== undefined) toast(bundleMsg()); return; }
+  if (d.spend !== undefined){ spendForm(); return; }
+  if (d.savespend !== undefined){
+    const amt = Math.round(Number(($("#sp-amt").value || "").replace(/[^0-9]/g, "")) || 0), what = $("#sp-what").value.trim();
+    if (!amt){ $("#sp-amt").focus(); toast("¿Cuánto gastaste?"); return; }
+    state.spends = state.spends || []; state.spends.push({id: uid(), d: key(new Date()), amount: amt, what}); save(); closeSheet();
+    const left = fund().left; toast(left < 0 ? "Guardado. Te pasaste por " + money(-left) : "Guardado. Te quedan " + money(left)); return;
+  }
+  if (d.delspend){
+    if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez"; return; }
+    state.spends = (state.spends || []).filter(x => x.id !== d.delspend); save(); render(); return;
+  }
+  if (d.allsp !== undefined){ showAllSp = !showAllSp; render(); return; }
   if (d.play !== undefined){ if (anim && anim.toggle) anim.toggle(); return; }
   if (d.addmedia !== undefined){ const f = $("#mfile"); if (f){ f.value = ""; f.click(); } return; }
   if (d.delmedia){
@@ -1591,6 +1636,7 @@ document.addEventListener("input", ev => {
 });
 document.addEventListener("change", ev => {
   const tg = ev.target;
+  if (tg.id === "bundle"){ state.bundle = tg.value.trim(); save(); toast(state.bundle ? "Listo: te lo recuerdo al empezar" : "Recordatorio sin nombre"); return; }
   if (tg.id === "f-seg"){ $("#f-reps-l").textContent = tg.checked ? "Segundos" : "Repeticiones"; return; }
   if (tg.id === "mfile" && tg.files && tg.files[0] && detailId){ handleFile(tg.files[0], detailId); return; }
   if (tg.id === "bfile" && tg.files && tg.files[0]){ readBackup(tg.files[0]); return; }
