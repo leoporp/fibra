@@ -447,16 +447,16 @@ const artThumb = id => '<svg class="ill" viewBox="'+(ART[id].vb||"0 0 220 150")+
 const SEED_EX = [
  {id:"ecc_ext", name:"Excéntrico de extensores de muñeca", zone:"Antebrazo", sets:3, reps:15, load:"1 kg", notes:"Antebrazo apoyado en el muslo o la mesa, palma hacia abajo, mano por fuera del borde. Sube con ayuda de la otra mano y baja solo con la muñeca en 3 a 4 segundos."},
  {id:"iso_ext", name:"Isométrico de extensores de muñeca", zone:"Antebrazo", sets:5, reps:30, unit:"seg", load:"1 kg o la otra mano", notes:"Misma posición, palma hacia abajo. Sostén la muñeca recta contra la resistencia sin moverla."},
- {id:"flex", name:"Flexores de muñeca", zone:"Antebrazo", sets:3, reps:15, load:"1 kg", notes:"Palma hacia arriba, antebrazo apoyado. Sube y baja la muñeca despacio."},
- {id:"prosup", name:"Pronación y supinación", zone:"Antebrazo", sets:3, reps:12, load:"Martillo o mancuerna tomada de un extremo", notes:"Codo pegado al cuerpo a 90 grados. Gira la palma de abajo hacia arriba, lento."},
- {id:"radial", name:"Desviación radial", zone:"Muñeca", sets:3, reps:12, load:"Martillo", notes:"De pie, brazo al costado. Levanta la punta del martillo hacia adelante moviendo solo la muñeca."},
- {id:"grip", name:"Agarre con pelota", zone:"Agarre y dedos", sets:3, reps:10, load:"Pelota antiestrés", notes:"Aprieta 5 segundos y suelta despacio."},
- {id:"fingext", name:"Extensión de dedos con liga", zone:"Agarre y dedos", sets:3, reps:20, load:"Liga de pelo o banda pequeña", notes:"Liga alrededor de los dedos estirados. Ábrelos contra la liga y cierra lento."},
- {id:"pinch", name:"Pinza de dedos", zone:"Agarre y dedos", sets:3, reps:10, load:"Pelota o plastilina", notes:"Aprieta entre el pulgar y cada dedo, 3 segundos cada uno."},
- {id:"tri_push", name:"Extensión de tríceps con banda", zone:"Tríceps", sets:3, reps:12, load:"Banda ligera", notes:"Banda anclada arriba, codos pegados al cuerpo. Extiende hacia abajo con agarre suave."},
- {id:"tri_oh", name:"Extensión de tríceps sobre la cabeza", zone:"Tríceps", sets:3, reps:12, load:"2 kg", notes:"Mancuerna con las dos manos detrás de la cabeza. Sube y baja lento, codos apuntando al techo."},
- {id:"row", name:"Remo con banda", zone:"Hombro", sets:3, reps:12, load:"Banda", notes:"Jala hacia el abdomen juntando los omóplatos. Codos cerca del cuerpo."},
- {id:"extrot", name:"Rotación externa de hombro con banda", zone:"Hombro", sets:3, reps:12, load:"Banda ligera", notes:"Codo pegado a la cintura a 90 grados. Gira el antebrazo hacia afuera y vuelve lento."}
+ {id:"flex", name:"Flexores de muñeca", zone:"Antebrazo", sets:2, reps:15, load:"1 kg", notes:"Palma hacia arriba, antebrazo apoyado. Sube y baja la muñeca despacio."},
+ {id:"prosup", name:"Pronación y supinación", zone:"Antebrazo", sets:2, reps:12, load:"Martillo o mancuerna tomada de un extremo", notes:"Codo pegado al cuerpo a 90 grados. Gira la palma de abajo hacia arriba, lento."},
+ {id:"radial", name:"Desviación radial", zone:"Muñeca", sets:2, reps:12, load:"Martillo", notes:"De pie, brazo al costado. Levanta la punta del martillo hacia adelante moviendo solo la muñeca."},
+ {id:"grip", name:"Agarre con pelota", zone:"Agarre y dedos", sets:2, reps:10, load:"Pelota antiestrés", notes:"Aprieta 5 segundos y suelta despacio."},
+ {id:"fingext", name:"Extensión de dedos con liga", zone:"Agarre y dedos", sets:2, reps:20, load:"Liga de pelo o banda pequeña", notes:"Liga alrededor de los dedos estirados. Ábrelos contra la liga y cierra lento."},
+ {id:"pinch", name:"Pinza de dedos", zone:"Agarre y dedos", sets:2, reps:10, load:"Pelota o plastilina", notes:"Aprieta entre el pulgar y cada dedo, 3 segundos cada uno."},
+ {id:"tri_push", name:"Extensión de tríceps con banda", zone:"Tríceps", sets:2, reps:12, load:"Banda ligera", notes:"Banda anclada arriba, codos pegados al cuerpo. Extiende hacia abajo con agarre suave."},
+ {id:"tri_oh", name:"Extensión de tríceps sobre la cabeza", zone:"Tríceps", sets:2, reps:12, load:"2 kg", notes:"Mancuerna con las dos manos detrás de la cabeza. Sube y baja lento, codos apuntando al techo."},
+ {id:"row", name:"Remo con banda", zone:"Hombro", sets:2, reps:12, load:"Banda", notes:"Jala hacia el abdomen juntando los omóplatos. Codos cerca del cuerpo."},
+ {id:"extrot", name:"Rotación externa de hombro con banda", zone:"Hombro", sets:2, reps:12, load:"Banda ligera", notes:"Codo pegado a la cintura a 90 grados. Gira el antebrazo hacia afuera y vuelve lento."}
 ];
 const SEED_SESS = [
  {id:"sA", name:"Excéntricos", items:["ecc_ext","flex","grip","fingext","tri_push"]},
@@ -477,8 +477,9 @@ const SEED_RW = [
 
 /* ---------- state ---------- */
 const PER_ARM = {ecc_ext:1, iso_ext:1, flex:1, prosup:1, radial:1, grip:1, pinch:1, extrot:1};
+const COMPL = {flex:1, prosup:1, radial:1, grip:1, fingext:1, pinch:1, tri_push:1, tri_oh:1, row:1, extrot:1};
 const SEC_PER_REP = {ecc_ext:5, flex:3, prosup:4, radial:3.5, grip:7, fingext:2, pinch:4, tri_push:3, tri_oh:3.5, row:3.5, extrot:3.5};
-function blank(){ return {v:5, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
+function blank(){ return {v:6, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
 function migrate(s){
   s = Object.assign(blank(), s);
   if (!s.sessions || !s.sessions.length){
@@ -497,7 +498,8 @@ function migrate(s){
   if (!s.goalV4){ s.weeklyGoal = 4; s.goalV4 = true; }
   for (const e of s.exercises) if (e.perArm === undefined) e.perArm = !!PER_ARM[e.id];
   if (!s.restSec) s.restSec = 60;
-  s.v = 5;
+  if (!s.setsV6){ for (const e of s.exercises) if (COMPL[e.id] && e.sets === 3) e.sets = 2; s.setsV6 = true; }
+  s.v = 6;
   return s;
 }
 let state = blank(), storedV = 0;
@@ -505,7 +507,7 @@ try { const raw = localStorage.getItem(LS_KEY); if (raw){ state = JSON.parse(raw
 state = migrate(state);
 let lastDoneId = null;
 let tab = "hoy", showAllRw = false, writing = false, pendingWrite = false, timer = null;
-const CUR_V = 5, CFG = window.FIBRA_CONFIG || {};
+const CUR_V = 6, CFG = window.FIBRA_CONFIG || {};
 let sb = null, session = null, lastSync = 0, dirty = false;
 const cloudReady = () => !!(sb && session);
 const canMedia = cloudReady;
@@ -1083,6 +1085,7 @@ function santiagoText(){
     s.items.map(exById).filter(Boolean).forEach(e => { t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.confirmed ? "" : " (por confirmar)") + "\n"; });
     t += "\n";
   });
+  t += "Para que cada sesión me tome unos 20 minutos, dejé 3 series en el excéntrico o el isométrico de extensores y 2 en los demás. ¿Te parece bien esa dosis o cambiarías algo?\n\n";
   const nd = nudged();
   if (nd.length) t += "Estos me han ido bien las últimas 2 semanas, con poco dolor: " + nd.map(e => e.name + (e.load ? " (" + e.load + ")" : "")).join(", ") + ". ¿Les subo la carga? ¿Cuánto?\n\n";
   const hs = habitStats(14);
