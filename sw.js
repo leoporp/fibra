@@ -1,6 +1,6 @@
 // Service worker de Fibra: guarda la app para abrirla sin internet y siempre
 // intenta traer la versión más nueva primero. No toca tus datos.
-const CACHE = "fibra-shell-v1";
+const CACHE = "fibra-shell-v2";
 const SHELL = [
   "./", "./index.html", "./config.js", "./vendor/supabase.js", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png",
