@@ -84,6 +84,11 @@ button{cursor:pointer}
 .hrow i{display:block;height:14px;border-radius:3px;background:var(--line);opacity:.6}
 .hrow i.on{background:var(--accent);opacity:1}
 .hrow i.l1{background:var(--accent);opacity:.2}.hrow i.l2{background:var(--accent);opacity:.4}.hrow i.l3{background:var(--accent);opacity:.6}.hrow i.l4{background:var(--accent);opacity:.8}.hrow i.l5{background:var(--accent);opacity:1}
+.days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
+.dayrow b{display:block;font-size:15px}
+.dayrow .go{flex:none;color:var(--accent);font-weight:700}
+.dayrow.on{border-left-color:var(--accent)}
 .sessmeta{margin:-6px 0 12px;color:var(--muted);font-size:14px}
 @media (prefers-reduced-motion: reduce){ .fx-new{animation:none;stroke-dashoffset:0} }
 .sync{font-size:13px;color:var(--muted)}
@@ -968,14 +973,6 @@ function viewHoy(pop){
       '<button class="thumb" data-detail="'+e.id+'" aria-label="Ver cómo se hace: '+esc(e.name)+'">'+thumbInner(e)+'</button></div>';
   });
 
-  const dr = getDraft();
-  const pr = (field, label) => {
-    const v = dr[field], set = typeof v === "number";
-    return '<div class="pr'+(set?"":" unset")+'"><label for="p-'+field+'">'+label+'<output id="o-'+field+'">'+(set ? v : "Sin registrar")+'</output></label>'+
-      '<input type="range" min="0" max="10" step="1" id="p-'+field+'" data-pain="'+field+'" value="'+(set?v:0)+'"><div class="scale" aria-hidden="true"><span>0 nada</span><span>10 el peor</span></div></div>';
-  };
-  const BRK = ["Nada","Poco","A medias","Casi todas","Todas"];
-  const brk = BRK.map((t,i) => '<button class="seg'+(dr.breaks === i+1 ? " on" : "")+'" data-breaks="'+(i+1)+'" aria-pressed="'+(dr.breaks === i+1)+'">'+t+'</button>').join("");
   const worst = Math.max(...[log.painL, log.painR].filter(v => typeof v === "number"), -1);
   const alert = worst >= 7 ? '<div class="alert">Dolor alto hoy. Baja la carga o quédate con los isométricos, y si sigue así un par de días, avísale a Santiago.</div>' : "";
   const pending = state.exercises.some(e => !e.confirmed);
@@ -986,15 +983,71 @@ function viewHoy(pop){
     (sess && items.length ? '<p class="sessmeta">Unos '+sessMin(sess)+' minutos, '+items.length+' ejercicios.</p>' : '')+
     (state.sessions.length > 1 ? '<div class="chips" aria-label="Cambiar sesión">'+chips+'</div>' : '')+
     list+'<p class="small muted">Toca el dibujo para ver el movimiento.'+(pending ? ' Rutina sugerida a partir de protocolos comunes para epicondilitis: confírmala con Santiago.' : '')+'</p></section>'+
-    '<section><h2>Registro del día</h2><div class="pain">'+
-      pr("painL","Dolor brazo izquierdo")+pr("painR","Dolor brazo derecho")+
-      '<div class="pr"><span class="lbl">Medios físicos</span><div class="toggles">'+
-        '<button class="tog'+(dr.ice ? " on" : "")+'" data-med="ice" aria-pressed="'+!!dr.ice+'">Hielo</button>'+
-        '<button class="tog'+(dr.heat ? " on" : "")+'" data-med="heat" aria-pressed="'+!!dr.heat+'">Calor</button></div></div>'+
-      '<div class="pr"><span class="lbl">Pausas activas: ¿qué tan juicioso fuiste?</span><div class="segs" role="group" aria-label="Pausas activas">'+brk+'</div></div>'+
-      '<div class="pr"><label for="p-note">Notas</label><textarea id="p-note" class="note" data-note placeholder="Ej: mucho teclado, dormí mal, molestia al cargar el mercado">'+esc(dr.note||"")+'</textarea></div>'+
-      '<div class="savebar"><span id="d-status" class="small muted">'+saveStatus()+'</span><button class="btn" id="d-save" data-savelog'+(draftDirty() ? "" : " disabled")+'>Guardar registro</button></div>'+
-    '</div>'+alert+'</section>';
+    '<section><h2>Registro del día</h2>'+regForm(getDraft(), "p", saveStatus(), draftDirty(), "Guardar registro")+alert+'</section>';
+}
+const BRK = ["Nada","Poco","A medias","Casi todas","Todas"];
+function regForm(dr, px, status, dirty, saveLbl){
+  const ids = px === "p" ? {o: "o-", save: "d-save", st: "d-status"} : {o: px+"o-", save: px+"-save", st: px+"-status"};
+  const pr = (field, label) => {
+    const v = dr[field], set = typeof v === "number";
+    return '<div class="pr'+(set?"":" unset")+'"><label for="'+px+'-'+field+'">'+label+'<output id="'+ids.o+field+'">'+(set ? v : "Sin registrar")+'</output></label>'+
+      '<input type="range" min="0" max="10" step="1" id="'+px+'-'+field+'" data-pain="'+field+'" value="'+(set?v:0)+'"><div class="scale" aria-hidden="true"><span>0 nada</span><span>10 el peor</span></div></div>';
+  };
+  const brk = BRK.map((t,i) => '<button class="seg'+(dr.breaks === i+1 ? " on" : "")+'" data-breaks="'+(i+1)+'" aria-pressed="'+(dr.breaks === i+1)+'">'+t+'</button>').join("");
+  return '<div class="pain">'+pr("painL","Dolor brazo izquierdo")+pr("painR","Dolor brazo derecho")+
+    '<div class="pr"><span class="lbl">Medios físicos</span><div class="toggles">'+
+      '<button class="tog'+(dr.ice ? " on" : "")+'" data-med="ice" aria-pressed="'+!!dr.ice+'">Hielo</button>'+
+      '<button class="tog'+(dr.heat ? " on" : "")+'" data-med="heat" aria-pressed="'+!!dr.heat+'">Calor</button></div></div>'+
+    '<div class="pr"><span class="lbl">Pausas activas: ¿qué tan juicioso fuiste?</span><div class="segs" role="group" aria-label="Pausas activas">'+brk+'</div></div>'+
+    '<div class="pr"><label for="'+px+'-note">Notas</label><textarea id="'+px+'-note" class="note" data-note placeholder="Ej: mucho teclado, dormí mal, molestia al cargar el mercado">'+esc(dr.note||"")+'</textarea></div>'+
+    '<div class="savebar"><span id="'+ids.st+'" class="small muted">'+status+'</span><button class="btn" id="'+ids.save+'" data-savelog'+(dirty ? "" : " disabled")+'>'+saveLbl+'</button></div></div>';
+}
+
+/* editing past days */
+let editDay = null, histDays = 7;
+const dayName = k => { const tk = key(new Date()), yk = key(addDays(new Date(), -1));
+  const base = parseKey(k).toLocaleDateString("es-CO", {weekday:"long", day:"numeric", month:"long"}).replace(",", "");
+  return k === tk ? "Hoy, " + base : k === yk ? "Ayer, " + base : base.charAt(0).toUpperCase() + base.slice(1); };
+function logSummary(l){
+  if (!l) return "";
+  const parts = [];
+  if (typeof l.painL === "number" || typeof l.painR === "number") parts.push("Dolor izq. " + (typeof l.painL === "number" ? l.painL : "–") + ", der. " + (typeof l.painR === "number" ? l.painR : "–"));
+  if (l.ice) parts.push("hielo"); if (l.heat) parts.push("calor");
+  if (typeof l.breaks === "number") parts.push("pausas: " + BRK[l.breaks-1].toLowerCase());
+  if (l.note) parts.push("nota");
+  return parts.join(" · ");
+}
+const editDirty = () => { const d = editDay, l = state.logs[d.key] || {}, n = v => typeof v === "number" ? v : null;
+  return n(d.painL) !== n(l.painL) || n(d.painR) !== n(l.painR) || !!d.ice !== !!l.ice || !!d.heat !== !!l.heat || n(d.breaks) !== n(l.breaks) || (d.note || "").trim() !== (l.note || "").trim(); };
+function updateEditBar(){ const b = $("#e-save"), st = $("#e-status"); const dt = editDirty(); if (b) b.disabled = !dt; if (st) st.innerHTML = dt ? '<span class="dirty">Cambios sin guardar</span>' : "Sin cambios"; }
+function historyHtml(){
+  const today = new Date(), keys = Object.keys(state.logs).sort(), first = keys.length ? keys[0] : key(today);
+  let rows = "";
+  for (let i = 0; i < histDays; i++){
+    const k = key(addDays(today, -i)); if (i >= 7 && k < first) break;
+    const l = state.logs[k], st = dayStats(k), sm = logSummary(l);
+    const ex = st.total ? (st.done ? st.done + " de " + st.total + " ejercicios" : "") : "";
+    rows += '<button class="dayrow'+(sm ? " on" : "")+'" data-editday="'+k+'"><span><b>'+esc(dayName(k))+'</b><span class="small muted">'+esc(sm || "Sin registro")+(ex ? '<br>'+esc(ex) : '')+'</span></span><span class="small go">'+(sm ? "Editar" : "Agregar")+'</span></button>';
+  }
+  const more = key(addDays(today, -histDays)) >= first;
+  return '<div class="days">'+rows+'</div>'+(more ? '<div class="row"><button class="btn ghost" data-morehist>Ver días anteriores</button></div>' : '');
+}
+function editDaySheet(k){
+  if (k === key(new Date())){ tab = "hoy"; closeSheet(); render(); syncNav(); const sb2 = $("#d-save"); if (sb2) sb2.scrollIntoView({block:"center"}); return; }
+  const l = state.logs[k] || {};
+  editDay = {key: k, painL: l.painL, painR: l.painR, ice: !!l.ice, heat: !!l.heat, breaks: l.breaks, note: l.note || ""};
+  const st = dayStats(k), has = !!logSummary(l);
+  openSheet('<div class="sh"><div><h3>'+esc(dayName(k))+'</h3><p class="muted small" style="margin:4px 0 0">'+(st.total ? "Ese día hiciste " + st.done + " de " + st.total + " ejercicios." : "Ese día no marcaste ejercicios.")+'</p></div><button class="btn ghost sm" data-close>Cerrar</button></div>'+
+    regForm(editDay, "e", "Sin cambios", false, "Guardar cambios")+
+    (has ? '<div class="row" style="margin-top:14px"><button class="btn danger" data-clearday="'+k+'">Borrar el registro de este día</button></div>' : ''), "[data-close]");
+}
+function commitEdit(){
+  const d = editDay, log = ensureLog(d.key), was = dayStats(d.key).logged;
+  ["painL","painR","breaks"].forEach(f => { if (typeof d[f] === "number") log[f] = d[f]; else delete log[f]; });
+  log.ice = !!d.ice; log.heat = !!d.heat; log.note = (d.note || "").trim(); log.savedAt = Date.now();
+  save(); const k = d.key; closeSheet();
+  const wd = parseKey(k).toLocaleDateString("es-CO", {weekday:"long"}), yk = key(addDays(new Date(), -1));
+  toast("Registro " + (k === yk ? "de ayer" : "del " + wd) + " guardado" + (!was && dayStats(k).logged ? ". +5" : ""));
 }
 
 function fibersSvg(n){
@@ -1080,6 +1133,7 @@ function viewProgreso(){
     '<h2>Constancia y dolor, 28 días</h2><div class="chart">'+chartSvg()+
       '<div class="legend"><span><i style="background:var(--accent)"></i>Ejercicios hechos</span><span><i style="background:var(--ink)"></i>Dolor del brazo peor (0 a 10)</span></div></div>'+
     '<h2>Hábitos, 28 días</h2>'+habitsHtml()+
+    '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
     insight()+
     '<h2>Cómo sumas puntos</h2><p class="small muted">10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p>';
 }
@@ -1169,7 +1223,7 @@ function openSheet(html, focusSel){
   const f = focusSel ? $("#sheet").querySelector(focusSel) : $("#sheet").querySelector("input:not([type=file]),select,textarea");
   if (f) f.focus();
 }
-function closeSheet(){ stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; $("#scrim").hidden = true; $("#sheet").innerHTML = ""; render(); syncNav(); }
+function closeSheet(){ stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; $("#scrim").hidden = true; $("#sheet").innerHTML = ""; render(); syncNav(); }
 
 /* back button: one history entry guards any open sheet or tab other than Hoy */
 let guarded = false, expectPop = false, formFrom = null;
@@ -1408,9 +1462,12 @@ async function handleFile(file, exId){
 }
 
 /* ---------- events ---------- */
+const inSheet = el => !!(el && el.closest("#sheet"));
+const drOf = el => inSheet(el) && editDay ? editDay : getDraft();
+function touched(el){ if (inSheet(el) && editDay) updateEditBar(); else keepDraft(); }
 function setPainDraft(f, v, el){
-  getDraft()[f] = Number(v); const o = $("#o-"+f); if (o) o.textContent = v;
-  if (el) el.closest(".pr").classList.remove("unset"); keepDraft();
+  drOf(el)[f] = Number(v); const pr = el.closest(".pr"), o = pr && pr.querySelector("output"); if (o) o.textContent = v;
+  if (pr) pr.classList.remove("unset"); touched(el);
 }
 document.addEventListener("click", ev => {
   const pf = ev.target.dataset && ev.target.dataset.pain;
@@ -1421,10 +1478,17 @@ document.addEventListener("click", ev => {
   if (d.tab){ tab = d.tab; render(); window.scrollTo(0,0); syncNav(); return; }
   if (d.go){ tab = d.go; if (!$("#scrim").hidden) closeSheet(); render(); window.scrollTo(0,0); syncNav(); return; }
   if (d.pick){ const log = ensureLog(key(new Date())); log.session = d.pick; save(); render(); return; }
-  if (d.med){ const dr = getDraft(); dr[d.med] = !dr[d.med]; t.classList.toggle("on", dr[d.med]); t.setAttribute("aria-pressed", String(dr[d.med])); keepDraft(); return; }
-  if (d.breaks){ const dr = getDraft(), v = Number(d.breaks); dr.breaks = dr.breaks === v ? undefined : v;
-    document.querySelectorAll("[data-breaks]").forEach(b => { const on = Number(b.dataset.breaks) === dr.breaks; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); }); keepDraft(); return; }
-  if (d.savelog !== undefined){ commitDraft(); return; }
+  if (d.med){ const dr = drOf(t); dr[d.med] = !dr[d.med]; t.classList.toggle("on", dr[d.med]); t.setAttribute("aria-pressed", String(dr[d.med])); touched(t); return; }
+  if (d.breaks){ const dr = drOf(t), v = Number(d.breaks); dr.breaks = dr.breaks === v ? undefined : v;
+    t.closest(".segs").querySelectorAll("[data-breaks]").forEach(b => { const on = Number(b.dataset.breaks) === dr.breaks; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); }); touched(t); return; }
+  if (d.savelog !== undefined){ if (inSheet(t) && editDay) commitEdit(); else commitDraft(); return; }
+  if (d.editday){ editDaySheet(d.editday); return; }
+  if (d.morehist !== undefined){ histDays += 14; render(); return; }
+  if (d.clearday){
+    if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez para borrarlo"; return; }
+    const l = state.logs[d.clearday]; if (l){ ["painL","painR","breaks","ice","heat","note","savedAt"].forEach(f => delete l[f]); save(); }
+    closeSheet(); toast("Registro borrado"); return;
+  }
   if (d.sx !== undefined){ const i = Number(d.sx), nm = $("#s-name"); if (nm) draft.name = nm.value; backTo = {draft: {id: draft.id, name: draft.name, items: draft.items.slice()}}; exerciseForm(draft.items[i], true); return; }
   if (d.back !== undefined){ if (backTo){ draft = backTo.draft; backTo = null; drawSession(); } else closeSheet(); return; }
   if (d.toggle !== undefined){
@@ -1523,7 +1587,7 @@ document.addEventListener("click", ev => {
 document.addEventListener("input", ev => {
   const tg = ev.target, f = tg.dataset && tg.dataset.pain;
   if (f){ setPainDraft(f, tg.value, tg); return; }
-  if (tg.dataset && tg.dataset.note !== undefined){ getDraft().note = tg.value; keepDraft(); }
+  if (tg.dataset && tg.dataset.note !== undefined){ drOf(tg).note = tg.value; touched(tg); }
 });
 document.addEventListener("change", ev => {
   const tg = ev.target;
