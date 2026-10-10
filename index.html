@@ -371,63 +371,64 @@ const ART = {
     segs:[{a:0,b:.1,from:0,to:0,txt:"Abajo"},{a:.1,b:.42,from:0,to:1,txt:"Sube"},{a:.42,b:.5,from:1,to:1,txt:"Arriba"},
           {a:.5,b:1,from:1,to:0,lin:true,txt:(k,s)=>"Baja despacio: "+count(k,s,3)}],
     draw:(p,dir) => forearmBase() + arrowFor(WR,52,40,-40,dir) + wristHand(lerp(40,-40,p)) },
-  prosup: { name:"Pronación y supinación", dur:5, thumbT:.2, note:"Codo pegado al cuerpo, doblado a 90 grados",
+  prosup: { name:"Pronación y supinación", dur:5, thumbT:.2, note:"Codo pegado al cuerpo, a 90 grados. Discos en un solo extremo",
     segs:[{a:0,b:.45,from:0,to:1,txt:"Gira despacio hacia un lado"},{a:.45,b:.5,from:1,to:1,txt:"Pausa"},
           {a:.5,b:.95,from:1,to:0,txt:"Y hacia el otro"},{a:.95,b:1,from:0,to:0,txt:"Pausa"}],
     draw:(p,dir) => { const C0 = [134,104], th = -90 + lerp(-70,70,p), end = P(C0,th,56);
       return Rc(14,14,62,150,26,"sup") + Ln([74,32],[88,90],"bd",14) + Ln([88,90],[124,102],"bd",16) +
         arrowFor(C0,74,-160,-20,dir) + Ln(P(C0,th+180,14),end,"eq",7) + Ln(P(end,th+90,14),P(end,th-90,14),"eq",15) + Ci(C0,12,"bdf"); } },
-  radial: { name:"Desviación radial", dur:5, thumbT:.2, note:"De pie, brazo al costado. Solo se mueve la muñeca",
-    segs:std4("Levanta la punta del martillo","Arriba","Baja despacio","Abajo"),
+  radial: { name:"Desviación radial", dur:5, thumbT:.2, note:"De pie, brazo al costado, discos solo adelante. Solo se mueve la muñeca",
+    segs:std4("Levanta el extremo con discos","Arriba","Baja despacio","Abajo"),
     draw:(p,dir) => { const F = [74,94], a = lerp(35,-25,p), end = P(F,a,62);
       return standing() + Ln([66,40],[73,88],"bd",13) + arrowFor(F,78,35,-25,dir) +
         Ln(P(F,a+180,8),end,"eq",7) + Ln(P(end,a-90,13),P(end,a+90,13),"eq",14) + Ci(F,9,"bdf"); } },
-  grip: { name:"Agarre con pelota", dur:7, thumbT:.3, note:"Pelota antiestrés. Vista desde el dorso de la mano",
+  grip: { name:"Agarre con toalla", dur:7, thumbT:.3, note:"Toalla de mano enrollada. Vista desde el dorso de la mano",
     segs:[{a:0,b:.06,from:0,to:1,txt:"Aprieta"},{a:.06,b:.78,from:1,to:1,lin:true,txt:(k,s)=>"Aprieta: "+count(k,s,5)},
           {a:.78,b:1,from:1,to:0,txt:"Suelta despacio"}],
-    draw:(p) => { let out = Rc(88,116,48,40,10,"bdf") + El([112,66],46+5*p,34-5*p,"eqp") + Rc(82,60,60,66,18,"bdf");
+    draw:(p) => { const th = f1(15-3*p); let out = Rc(88,116,48,40,10,"bdf") + Rc(40,f1(70-th),144,f1(2*th),th,"eqp") + '<circle cx="172" cy="70" r="'+f1(th*.5)+'" class="eq" stroke-width="3"/>' + Rc(82,60,60,66,18,"bdf");
       [83,98,113,128].forEach((x,i) => { out += Rc(x,34+7*p+(i===0||i===3?4:0),13,40,6.5,"bdf"); });
       return out + Ln([86,112],[68,88-4*p],"bd",14); } },
-  fingext: { name:"Extensión de dedos con liga", dur:5, thumbT:.25, note:"Liga de pelo o banda pequeña",
-    segs:std4("Abre los dedos contra la liga","Abiertos","Cierra despacio","Cerrados"),
+  fingext: { name:"Extensión de dedos contra la otra mano", dur:5, thumbT:.25, note:"La otra mano rodea las puntas de los dedos",
+    segs:std4("Abre los dedos contra la otra mano","Abiertos","Cierra despacio","Cerrados"),
     draw:(p) => { const bases = [[96,100],[108,98],[120,98],[132,100]], cl = [14,5,-5,-14], op = [-24,-8,8,24];
       let out = Rc(86,94,56,70,16,"bdf"); const mids = [];
-      bases.forEach((b,i) => { const ang = -90 + lerp(cl[i],op[i],p); out += Ln(b,P(b,ang,46),"bd",11); mids.push(P(b,ang,33)); });
+      bases.forEach((b,i) => { const ang = -90 + lerp(cl[i],op[i],p); out += Ln(b,P(b,ang,46),"bd",11); mids.push(P(b,ang,44)); });
       const tb = [90,124]; out += Ln(tb,P(tb,-90+lerp(20,-52,p),34),"bd",12);
-      const xs = mids.map(m => m[0]), cy = mids.reduce((s,m) => s+m[1],0)/4;
-      return out + El([(Math.min(...xs)+Math.max(...xs))/2, cy], (Math.max(...xs)-Math.min(...xs))/2+7, 5, "band"); } },
-  pinch: { name:"Pinza de dedos", dur:4.5, thumbT:.4, note:"Pelota pequeña o plastilina",
+      const xs = mids.map(m => m[0]), cy = mids.reduce((s,m) => s+m[1],0)/4, cx = (Math.min(...xs)+Math.max(...xs))/2, rx = (Math.max(...xs)-Math.min(...xs))/2+13;
+      return out + El([cx, cy-6], rx, 17, "bdlf"); } },
+  pinch: { name:"Pinza de dedos", dur:4.5, thumbT:.4, note:"Toalla doblada en un rollo grueso",
     segs:[{a:0,b:.08,from:0,to:1,txt:(k,s,l)=>"Pulgar con "+FING[l%4]},
           {a:.08,b:.75,from:1,to:1,lin:true,txt:(k,s,l)=>"Pulgar con "+FING[l%4]+": "+count(k,s,3)},
           {a:.75,b:.9,from:1,to:0,txt:"Suelta"},{a:.9,b:1,from:0,to:0,txt:(k,s,l)=>"Sigue con "+FING[(l+1)%4]}],
     draw:(p) => { const c = [126,78], rx = 13 + 3*p, ry = 13 - 4*p;
-      return Rc(-24,38,66,86,30,"bdf") + Pl([[36,54],[74,42],[106,48],[c[0]-4,c[1]-ry-7]],"bd",14) + Pl([[36,108],[76,104],[c[0]-4,c[1]+ry+7]],"bd",17) + El(c,rx,ry,"eqp"); } },
-  tri_push: { name:"Extensión de tríceps con banda", dur:5, thumbT:.15, note:"Banda anclada arriba",
+      return Rc(-24,38,66,86,30,"bdf") + Pl([[36,54],[74,42],[106,48],[c[0]-4,c[1]-ry-7]],"bd",14) + Pl([[36,108],[76,104],[c[0]-4,c[1]+ry+7]],"bd",17) + Rc(f1(c[0]-rx-3),f1(c[1]-ry),f1(2*rx+6),f1(2*ry),6,"eqp"); } },
+  tri_push: { name:"Extensión de tríceps con banda", dur:5, thumbT:.15, note:"La otra mano sostiene la banda contra el pecho",
     segs:std4("Empuja hacia abajo","Codo quieto, pegado al cuerpo","Vuelve despacio","Arriba"),
-    draw:(p,dir) => { const E = [68,86], th = lerp(-12,85,p), H = P(E,th,44), A = [178,10];
-      return standing() + Rc(170,0,16,12,3,"sup") + Ln(A,H,"band") + Ln([64,42],E,"bd",13) + arrowFor(E,60,-12,85,dir) + Ln(E,H,"bd",13) + Ci(H,7,"bdf"); } },
+    draw:(p,dir) => { const E = [68,86], th = lerp(-12,85,p), H = P(E,th,44), A = [80,48];
+      return standing() + Ln(A,H,"band") + Ln([64,42],E,"bd",13) + arrowFor(E,60,-12,85,dir) + Ln(E,H,"bd",13) + Ci(H,7,"bdf") + Ci(A,7,"bdlf"); } },
   tri_oh: { name:"Extensión de tríceps sobre la cabeza", dur:5.5, thumbT:.3, note:"Mancuerna con las dos manos",
     segs:[{a:0,b:.08,from:0,to:0,txt:"Arriba"},{a:.08,b:.5,from:0,to:1,txt:"Baja detrás de la cabeza"},{a:.5,b:.58,from:1,to:1,txt:"Abajo"},
           {a:.58,b:.86,from:1,to:0,txt:"Sube, codos apuntando al techo"},{a:.86,b:1,from:0,to:0,txt:"Arriba"}],
     draw:(p,dir) => { const S = [106,112], E = [114,58], ph = lerp(-88,-200,p), H = P(E,ph,36);
       return Ci([95,96],12,"bdf") + Rc(80,110,36,60,12,"sup") + Ln(S,E,"bd",13) + arrowFor(E,54,-88,-200,dir) + Ln(E,H,"bd",13) + Ci(H,11,"eqp") + Ci(H,6,"bdf"); } },
-  row: { name:"Remo con banda", dur:5, thumbT:.2, note:"Banda anclada al frente",
+  row: { name:"Remo sentado con banda", dur:5, thumbT:.2, note:"Sentado en el piso, banda grande alrededor de los pies",
     segs:std4("Jala hacia el abdomen","Junta los omóplatos","Vuelve despacio","Brazo estirado"),
-    draw:(p,dir) => { const S = [66,46], E = P(S,lerp(18,112,p),36), H = P(E,lerp(12,-4,p),38), A = [198,70];
-      const arr = dir > 0 ? lineArrow([156,112],[110,112]) : dir < 0 ? lineArrow([110,112],[156,112]) : '';
-      return standing() + Rc(198,30,10,120,4,"sup") + Ln(A,H,"band") + Ln(S,E,"bd",13) + Ln(E,H,"bd",13) + Ci(H,7,"bdf") + arr; } },
-  extrot: { name:"Rotación externa de hombro", dur:5, thumbT:.2, note:"Vista desde arriba. Codo pegado a la cintura",
+    draw:(p,dir) => { const S = [62,56], E = P(S,lerp(18,112,p),34), H = P(E,lerp(12,-4,p),36), A = [178,106];
+      const arr = dir > 0 ? lineArrow([152,48],[114,48]) : dir < 0 ? lineArrow([114,48],[152,48]) : '';
+      return Rc(20,126,176,6,3,"sup") + Ln([64,118],[172,118],"bdl",12) + Ln([174,118],[178,98],"bdl",9) + Ci([58,30],11,"bdf") + Rc(44,44,28,78,12,"sup") +
+        Ln(A,H,"band") + Ln(S,E,"bd",13) + Ln(E,H,"bd",13) + Ci(H,7,"bdf") + arr; } },
+  extrot: { name:"Rotación externa con mini banda", dur:5, thumbT:.2, note:"Vista desde arriba. Mini banda en las muñecas, codos pegados a la cintura",
     segs:std4("Gira hacia afuera","Afuera","Vuelve despacio","Al frente"),
-    draw:(p,dir) => { const E = [150,74], H = P(E,lerp(90,12,p),52), A = [20,132];
-      return El([100,62],58,18,"sup") + Ci([100,60],16,"bdf") + Ci([50,74],7,"bdlf") + Ln([50,74],[50,120],"bdl",12) + Ci(A,6,"sup") +
-        Ln(A,H,"band") + arrowFor(E,66,90,12,dir) + Ci(E,8,"bdf") + Ln(E,H,"bd",13) + Ci(H,7,"bdf"); } }
+    draw:(p,dir) => { const E = [150,74], E2 = [50,74], H = P(E,lerp(90,12,p),52), H2 = P(E2,lerp(90,168,p),52);
+      return El([100,62],58,18,"sup") + Ci([100,60],16,"bdf") + arrowFor(E,66,90,12,dir) + arrowFor(E2,66,90,168,dir) +
+        Ci(E,8,"bdf") + Ln(E,H,"bd",13) + Ci(E2,8,"bdf") + Ln(E2,H2,"bd",13) + Ln(H2,H,"band") + Ci(H,7,"bdf") + Ci(H2,7,"bdf"); } }
 };
 function frameOf(art, t, loop, thumb){
   const st = seg(t, art.segs, art.dur), dir = Math.sign(st.s.to - st.s.from);
   const txt = typeof st.s.txt === "function" ? st.s.txt(st.k, st.secs, loop) : st.s.txt;
   return {inner: art.draw(st.p, dir, {t, thumb, loop}), txt};
 }
-const VB = {"ecc_ext": "2 31 179 89", "iso_ext": "2 5 210 107", "flex": "2 30 179 87", "prosup": "8 8 205 142", "radial": "2 1 194 149", "grip": "30 24 164 126", "fingext": "35 41 142 109", "pinch": "0 22 158 118", "tri_push": "17 0 195 150", "tri_oh": "0 0 195 150", "row": "26 1 194 149", "extrot": "8 38 212 112"};
+const VB = {"ecc_ext": "2 31 179 89", "iso_ext": "2 5 210 107", "flex": "2 30 179 87", "prosup": "8 8 205 142", "radial": "2 1 194 149", "grip": "36 32 152 126", "fingext": "35 30 142 120", "pinch": "0 22 158 118", "tri_push": "0 3 180 155", "tri_oh": "0 0 195 150", "row": "18 17 180 117", "extrot": "-21 42 242 106"};
 Object.keys(VB).forEach(k => { ART[k].vb = VB[k]; });
 function wave(x0, x1, y, amp, ph){
   if (amp <= 0.05) return "M"+x0+" "+y+" L"+x1+" "+y;
@@ -445,18 +446,18 @@ const artThumb = id => '<svg class="ill" viewBox="'+(ART[id].vb||"0 0 220 150")+
 
 /* ---------- seeds ---------- */
 const SEED_EX = [
- {id:"ecc_ext", name:"Excéntrico de extensores de muñeca", zone:"Antebrazo", sets:3, reps:15, load:"1 kg", notes:"Antebrazo apoyado en el muslo o la mesa, palma hacia abajo, mano por fuera del borde. Sube con ayuda de la otra mano y baja solo con la muñeca en 3 a 4 segundos."},
- {id:"iso_ext", name:"Isométrico de extensores de muñeca", zone:"Antebrazo", sets:5, reps:30, unit:"seg", load:"1 kg o la otra mano", notes:"Misma posición, palma hacia abajo. Sostén la muñeca recta contra la resistencia sin moverla."},
- {id:"flex", name:"Flexores de muñeca", zone:"Antebrazo", sets:2, reps:15, load:"1 kg", notes:"Palma hacia arriba, antebrazo apoyado. Sube y baja la muñeca despacio."},
- {id:"prosup", name:"Pronación y supinación", zone:"Antebrazo", sets:2, reps:12, load:"Martillo o mancuerna tomada de un extremo", notes:"Codo pegado al cuerpo a 90 grados. Gira la palma de abajo hacia arriba, lento."},
- {id:"radial", name:"Desviación radial", zone:"Muñeca", sets:2, reps:12, load:"Martillo", notes:"De pie, brazo al costado. Levanta la punta del martillo hacia adelante moviendo solo la muñeca."},
- {id:"grip", name:"Agarre con pelota", zone:"Agarre y dedos", sets:2, reps:10, load:"Pelota antiestrés", notes:"Aprieta 5 segundos y suelta despacio."},
- {id:"fingext", name:"Extensión de dedos con liga", zone:"Agarre y dedos", sets:2, reps:20, load:"Liga de pelo o banda pequeña", notes:"Liga alrededor de los dedos estirados. Ábrelos contra la liga y cierra lento."},
- {id:"pinch", name:"Pinza de dedos", zone:"Agarre y dedos", sets:2, reps:10, load:"Pelota o plastilina", notes:"Aprieta entre el pulgar y cada dedo, 3 segundos cada uno."},
- {id:"tri_push", name:"Extensión de tríceps con banda", zone:"Tríceps", sets:2, reps:12, load:"Banda ligera", notes:"Banda anclada arriba, codos pegados al cuerpo. Extiende hacia abajo con agarre suave."},
- {id:"tri_oh", name:"Extensión de tríceps sobre la cabeza", zone:"Tríceps", sets:2, reps:12, load:"2 kg", notes:"Mancuerna con las dos manos detrás de la cabeza. Sube y baja lento, codos apuntando al techo."},
- {id:"row", name:"Remo con banda", zone:"Hombro", sets:2, reps:12, load:"Banda", notes:"Jala hacia el abdomen juntando los omóplatos. Codos cerca del cuerpo."},
- {id:"extrot", name:"Rotación externa de hombro con banda", zone:"Hombro", sets:2, reps:12, load:"Banda ligera", notes:"Codo pegado a la cintura a 90 grados. Gira el antebrazo hacia afuera y vuelve lento."}
+ {id:"ecc_ext", name:"Excéntrico de extensores de muñeca", zone:"Antebrazo", sets:3, reps:15, load:"Mancuerna sin discos", notes:"Antebrazo apoyado en el muslo o la mesa, palma hacia abajo, mano por fuera del borde. Sube con ayuda de la otra mano y baja solo con la muñeca en 3 a 4 segundos. Si con la mancuerna sola te duele más de 3 de 10, empieza sin peso."},
+ {id:"iso_ext", name:"Isométrico de extensores de muñeca", zone:"Antebrazo", sets:5, reps:30, unit:"seg", load:"Mancuerna sin discos o la otra mano", notes:"Misma posición, palma hacia abajo. Sostén la muñeca recta contra la resistencia sin moverla."},
+ {id:"flex", name:"Flexores de muñeca", zone:"Antebrazo", sets:2, reps:15, load:"Mancuerna sin discos", notes:"Palma hacia arriba, antebrazo apoyado. Sube y baja la muñeca despacio."},
+ {id:"prosup", name:"Pronación y supinación", zone:"Antebrazo", sets:2, reps:12, load:"Mancuerna con discos en un solo extremo", notes:"Pon discos solo en un lado de la mancuerna. Codo pegado al cuerpo a 90 grados. Gira la palma de abajo hacia arriba, lento. Entre más cerca de los discos la agarres, más fácil."},
+ {id:"radial", name:"Desviación radial", zone:"Muñeca", sets:2, reps:12, load:"Mancuerna con discos en un solo extremo", notes:"De pie, brazo al costado, con los discos hacia adelante. Levanta ese extremo moviendo solo la muñeca. Entre más cerca de los discos la agarres, más fácil."},
+ {id:"grip", name:"Agarre con toalla", zone:"Agarre y dedos", sets:2, reps:10, load:"Toalla de mano enrollada", notes:"Enrolla la toalla bien apretada. Apriétala 5 segundos y suelta despacio."},
+ {id:"fingext", name:"Extensión de dedos contra la otra mano", zone:"Agarre y dedos", sets:2, reps:20, load:"La otra mano", notes:"Junta las puntas de los dedos. Rodéalas con la otra mano y haz una resistencia suave mientras los abres; ciérralos lento. Si consigues ligas de pelo, sirven igual."},
+ {id:"pinch", name:"Pinza de dedos con toalla", zone:"Agarre y dedos", sets:2, reps:10, load:"Toalla doblada", notes:"Dobla la toalla en un rollo grueso. Apriétalo entre el pulgar y cada dedo, 3 segundos cada uno."},
+ {id:"tri_push", name:"Extensión de tríceps con banda", zone:"Tríceps", sets:2, reps:12, load:"Banda grande", notes:"Con la otra mano, sostén la banda contra el pecho a la altura del hombro. Codo pegado al cuerpo; extiende el brazo hacia abajo con agarre suave. Si está muy dura, agárrala con más holgura."},
+ {id:"tri_oh", name:"Extensión de tríceps sobre la cabeza", zone:"Tríceps", sets:2, reps:12, load:"Mancuerna de 2 a 3 kg", notes:"Mancuerna con las dos manos detrás de la cabeza. Sube y baja lento, codos apuntando al techo."},
+ {id:"row", name:"Remo sentado con banda", zone:"Hombro", sets:2, reps:12, load:"Banda grande", notes:"Sentado en el piso con las piernas estiradas, pasa la banda grande por la planta de los pies. Jala hacia el abdomen juntando los omóplatos, codos cerca del cuerpo, y vuelve lento."},
+ {id:"extrot", name:"Rotación externa de hombros con mini banda", zone:"Hombro", sets:2, reps:12, load:"Mini banda en las muñecas", notes:"Mini banda alrededor de las muñecas, codos pegados a la cintura a 90 grados. Gira los dos antebrazos hacia afuera al tiempo y vuelve lento, sin apretar las manos."}
 ];
 const SEED_SESS = [
  {id:"sA", name:"Excéntricos", items:["ecc_ext","flex","grip","fingext","tri_push"]},
@@ -476,10 +477,11 @@ const SEED_RW = [
 ];
 
 /* ---------- state ---------- */
-const PER_ARM = {ecc_ext:1, iso_ext:1, flex:1, prosup:1, radial:1, grip:1, pinch:1, extrot:1};
+const PER_ARM = {ecc_ext:1, iso_ext:1, flex:1, prosup:1, radial:1, grip:1, pinch:1};
+const OLD_LOAD = {ecc_ext:"1 kg", iso_ext:"1 kg o la otra mano", flex:"1 kg", prosup:"Martillo o mancuerna tomada de un extremo", radial:"Martillo", grip:"Pelota antiestrés", fingext:"Liga de pelo o banda pequeña", pinch:"Pelota o plastilina", tri_push:"Banda ligera", tri_oh:"2 kg", row:"Banda", extrot:"Banda ligera"};
 const COMPL = {flex:1, prosup:1, radial:1, grip:1, fingext:1, pinch:1, tri_push:1, tri_oh:1, row:1, extrot:1};
 const SEC_PER_REP = {ecc_ext:5, flex:3, prosup:4, radial:3.5, grip:7, fingext:2, pinch:4, tri_push:3, tri_oh:3.5, row:3.5, extrot:3.5};
-function blank(){ return {v:6, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
+function blank(){ return {v:7, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
 function migrate(s){
   s = Object.assign(blank(), s);
   if (!s.sessions || !s.sessions.length){
@@ -499,7 +501,11 @@ function migrate(s){
   for (const e of s.exercises) if (e.perArm === undefined) e.perArm = !!PER_ARM[e.id];
   if (!s.restSec) s.restSec = 60;
   if (!s.setsV6){ for (const e of s.exercises) if (COMPL[e.id] && e.sets === 3) e.sets = 2; s.setsV6 = true; }
-  s.v = 6;
+  if (!s.equipV7){
+    for (const e of s.exercises){ const se = SEED_EX.find(x => x.id === e.id);
+      if (se && OLD_LOAD[e.id] && e.load === OLD_LOAD[e.id]){ e.name = se.name; e.load = se.load; e.notes = se.notes; e.perArm = !!PER_ARM[e.id]; } }
+    s.equipV7 = true; }
+  s.v = 7;
   return s;
 }
 let state = blank(), storedV = 0;
@@ -507,7 +513,7 @@ try { const raw = localStorage.getItem(LS_KEY); if (raw){ state = JSON.parse(raw
 state = migrate(state);
 let lastDoneId = null;
 let tab = "hoy", showAllRw = false, writing = false, pendingWrite = false, timer = null;
-const CUR_V = 6, CFG = window.FIBRA_CONFIG || {};
+const CUR_V = 7, CFG = window.FIBRA_CONFIG || {};
 let sb = null, session = null, lastSync = 0, dirty = false;
 const cloudReady = () => !!(sb && session);
 const canMedia = cloudReady;
@@ -1085,7 +1091,7 @@ function santiagoText(){
     s.items.map(exById).filter(Boolean).forEach(e => { t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.confirmed ? "" : " (por confirmar)") + "\n"; });
     t += "\n";
   });
-  t += "Para que cada sesión me tome unos 20 minutos, dejé 3 series en el excéntrico o el isométrico de extensores y 2 en los demás. ¿Te parece bien esa dosis o cambiarías algo?\n\n";
+  t += "Para que cada sesión me tome unos 20 minutos, dejé 3 series en el excéntrico o el isométrico de extensores y 2 en los demás. ¿Te parece bien esa dosis o cambiarías algo?\n\nLos adapté a lo que tengo en casa: mancuernas ajustables de 2 a 7 kg, una banda grande, 3 mini bandas y una toalla.\n\n";
   const nd = nudged();
   if (nd.length) t += "Estos me han ido bien las últimas 2 semanas, con poco dolor: " + nd.map(e => e.name + (e.load ? " (" + e.load + ")" : "")).join(", ") + ". ¿Les subo la carga? ¿Cuánto?\n\n";
   const hs = habitStats(14);
@@ -1173,7 +1179,7 @@ function mediaHtml(e){
       (x.kind === "video" ? '<video data-mpath="'+esc(x.id)+'" controls playsinline preload="metadata"></video>' : '<img data-mpath="'+esc(x.id)+'" alt="Foto: '+esc(e.name)+'">')+
       '<figcaption><span>'+(x.kind === "video" ? "Video" : "Foto")+', '+esc(fmtShort(x.d))+'</span>'+(canMedia() ? '<button class="icon-btn" data-delmedia="'+esc(x.id)+'">Quitar</button>' : '')+'</figcaption></figure>').join("") + '</div>';
   } else {
-    out += '<p class="muted small">'+(canMedia() ? "Todavía no hay. En tu próxima cita, pídele a Santiago que te deje grabarlo haciendo el ejercicio." : "Todavía no hay fotos ni videos.")+'</p>';
+    out += '<p class="muted small">'+(canMedia() ? "Todavía no hay. En tu próxima cita, pídele a Santiago que te deje grabarlo haciendo el ejercicio." : !sb ? "Las fotos y videos se activan cuando la app esté conectada a la nube." : "Todavía no hay fotos ni videos.")+'</p>';
   }
   if (sb && !session) out += '<p class="small muted">Las fotos y videos se guardan en la nube: inicia sesión para agregarlos.</p><div class="row"><button class="btn ghost" data-login>Iniciar sesión</button></div>';
   if (canMedia()) out += '<input type="file" id="mfile" accept="image/*,video/*" hidden><div class="row" style="margin-top:10px"><button class="btn" data-addmedia>Agregar foto o video</button></div><p class="upl" id="mstatus" role="status"></p>';
