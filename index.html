@@ -1165,11 +1165,29 @@ function startAnim(artId){
 /* ---------- sheets ---------- */
 let detailId = null, draft = null;
 function openSheet(html, focusSel){
-  $("#sheet").innerHTML = html; $("#scrim").hidden = false;
+  $("#sheet").innerHTML = html; $("#scrim").hidden = false; syncNav();
   const f = focusSel ? $("#sheet").querySelector(focusSel) : $("#sheet").querySelector("input:not([type=file]),select,textarea");
   if (f) f.focus();
 }
-function closeSheet(){ stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; $("#scrim").hidden = true; $("#sheet").innerHTML = ""; render(); }
+function closeSheet(){ stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; $("#scrim").hidden = true; $("#sheet").innerHTML = ""; render(); syncNav(); }
+
+/* back button: one history entry guards any open sheet or tab other than Hoy */
+let guarded = false, expectPop = false, formFrom = null;
+function syncNav(){
+  const nonRoot = !$("#scrim").hidden || tab !== "hoy";
+  if (nonRoot && !guarded){ try { history.pushState({fibra: 1}, ""); guarded = true; } catch(e){} }
+  else if (!nonRoot && guarded){ guarded = false; expectPop = true; try { history.back(); } catch(e){ expectPop = false; } }
+}
+window.addEventListener("popstate", () => {
+  if (expectPop){ expectPop = false; return; }
+  guarded = false;
+  if (!$("#scrim").hidden){
+    if (backTo){ draft = backTo.draft; backTo = null; drawSession(); }
+    else if (formFrom){ const id = formFrom; formFrom = null; openDetail(id); }
+    else closeSheet();
+  } else if (tab !== "hoy"){ tab = "hoy"; render(); window.scrollTo(0,0); }
+  syncNav();
+});
 
 function mediaHtml(e){
   const m = e.media || [];
@@ -1210,6 +1228,7 @@ function openDetail(id){ if (!tmr || tmr.id !== id) stopTimer(); draft = null; d
 
 let backTo = null;
 function exerciseForm(id, fromSess){
+  formFrom = (!fromSess && detailId && !$("#scrim").hidden) ? detailId : null;
   stopAnim(); detailId = null; if (!fromSess) backTo = null;
   const isNew = !id, e = exById(id) || {zone:"Antebrazo", unit:"reps", confirmed:false, art:""};
   const zones = ZONES.map(z => '<option'+(z===e.zone?" selected":"")+'>'+z+'</option>').join("");
@@ -1399,8 +1418,8 @@ document.addEventListener("click", ev => {
   const t = ev.target.closest("button");
   if (!t){ if (ev.target === $("#scrim")) closeSheet(); return; }
   const d = t.dataset;
-  if (d.tab){ tab = d.tab; render(); window.scrollTo(0,0); return; }
-  if (d.go){ if (!$("#scrim").hidden) closeSheet(); tab = d.go; render(); window.scrollTo(0,0); return; }
+  if (d.tab){ tab = d.tab; render(); window.scrollTo(0,0); syncNav(); return; }
+  if (d.go){ tab = d.go; if (!$("#scrim").hidden) closeSheet(); render(); window.scrollTo(0,0); syncNav(); return; }
   if (d.pick){ const log = ensureLog(key(new Date())); log.session = d.pick; save(); render(); return; }
   if (d.med){ const dr = getDraft(); dr[d.med] = !dr[d.med]; t.classList.toggle("on", dr[d.med]); t.setAttribute("aria-pressed", String(dr[d.med])); keepDraft(); return; }
   if (d.breaks){ const dr = getDraft(), v = Number(d.breaks); dr.breaks = dr.breaks === v ? undefined : v;
@@ -1518,6 +1537,7 @@ document.addEventListener("keydown", ev => {
 });
 
 render();
+if (history.state && history.state.fibra){ guarded = true; syncNav(); }
 initCloud();
 registerSW();
 })();
