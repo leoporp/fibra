@@ -96,6 +96,16 @@ button{cursor:pointer}
 .chart .legend svg{display:inline-block;width:26px;height:10px;vertical-align:0;margin-right:6px}
 .chart .legend span{white-space:nowrap}
 .pday{margin:8px 0 0;color:var(--ink);min-height:2.6em}
+.anchor{margin:4px 0 0;font-size:14px;line-height:1.35;color:var(--ink);min-height:2.7em}
+.pr.unset .anchor{color:var(--muted)}
+.hint{margin:10px 0 0}
+.hint .linkish{font-size:14px;color:var(--ink)}
+.guide{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 12px}
+.gl{display:flex;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.gl:last-child{border-bottom:0}
+.gl b{flex:none;min-width:2.2em;font-family:var(--display);font-size:18px;color:var(--muted)}
+.gl.key b{color:var(--accent)}
+.pill.play{display:block;margin:0 0 10px;background:var(--soft);border-left:3px solid var(--fiber);border-radius:8px;padding:8px 10px;font-weight:700}
 .days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .dayrow b{display:block;font-size:15px}
@@ -212,7 +222,7 @@ textarea.note{width:100%;min-height:70px;margin-top:8px;border:1px solid var(--l
 .btn.block{width:100%}
 .btn:disabled{opacity:.5;cursor:default}
 .row{display:flex;gap:10px;flex-wrap:wrap}
-.icon-btn{background:none;border:0;color:var(--muted);padding:6px;font-size:14px;text-decoration:underline}
+.icon-btn{background:none;border:0;color:var(--muted);padding:10px 6px;min-height:40px;font-size:14px;text-decoration:underline}
 
 /* progress */
 .fibers{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 16px 16px}
@@ -781,7 +791,7 @@ function loadNudge(e){
 const nudged = () => state.exercises.filter(loadNudge);
 
 /* timer */
-let tmr = null, actx = null, wakeLock = null;
+let tmr = null, actx = null, wakeLock = null, startNote = false;
 const fmtSec = n => Math.floor(n/60) + ":" + pad(n%60);
 function unlockAudio(){ try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch(e){} }
 function beep(n){
@@ -792,9 +802,10 @@ function beep(n){
       o.start(t); o.stop(t+0.2); } } catch(e){}
 }
 async function keepAwake(on){
-  try { if (on && !wakeLock && navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen");
+  try { if (on && !wakeLock && navigator.wakeLock){ wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => { wakeLock = null; }); }
         else if (!on && wakeLock){ const w = wakeLock; wakeLock = null; await w.release(); } } catch(e){ wakeLock = null; }
 }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && tmr){ keepAwake(true); tickTimer(); } });
 function stopTimer(){ if (tmr){ clearInterval(tmr.iv); tmr = null; } keepAwake(false); }
 function startTimer(id, kind, secs){
   stopTimer();
@@ -831,7 +842,8 @@ function drawFlow(){
   box.hidden = false;
   const isDone = pl.done(e.id), nx = nextUndone(e.id), total = e.sets || 0, sd = Math.min(setsDone(e.id), total);
   const run = tmr && tmr.id === e.id ? tmr : null;
-  let h = '<p class="small muted">Ejercicio '+(idx+1)+' de '+pl.items.length+' de hoy</p>';
+  if (startNote && (setsDone(e.id) > 0 || isDone)) startNote = false;
+  let h = (startNote ? '<p class="pill play">'+esc(bundleMsg())+'</p>' : '')+'<p class="small muted">Ejercicio '+(idx+1)+' de '+pl.items.length+' de hoy</p>';
   if (isDone){
     h += '<p class="phase" style="min-height:0;margin-bottom:10px">Ejercicio completo</p><div class="row">'+
       (nx ? '<button class="btn" data-next>Siguiente ejercicio</button>' : '<button class="btn" data-close>Terminar</button>')+
@@ -1007,15 +1019,46 @@ function viewHoy(pop){
     '<section><h2>Registro del día</h2>'+regForm(getDraft(), "p", saveStatus(), draftDirty(), "Guardar registro")+alert+'</section>';
 }
 const BRK = ["Nada","Poco","A medias","Casi todas","Todas"];
+const PAIN_TXT = [
+  "Nada: no lo sentiste en todo el día.",
+  "Apenas: lo notaste una o dos veces, de pasada, sin que molestara usar el brazo.",
+  "Leve: apareció con algún esfuerzo, como agarrar fuerte o cargar, y se fue en minutos.",
+  "Molesto: lo notaste varias veces con uso normal (mouse, teclado, cocinar), pero hiciste todo igual.",
+  "Te hizo ajustar: cambiar de mano, agarrar distinto o hacer pausas extra. O estuvo buena parte del día.",
+  "Te limitó: evitaste o dejaste algo a medias, o lo sentiste también en reposo.",
+  "Interfirió con trabajar en el computador gran parte del día.",
+  "Fuerte: limitó cosas básicas, como tomar un vaso lleno o dar la mano.",
+  "Muy fuerte, incluso con el brazo quieto.",
+  "Muy fuerte: no te dejó dormir ni descansar.",
+  "El peor dolor que te puedas imaginar."];
+const painTxt = v => typeof v === "number" ? PAIN_TXT[v] : "Mueve la barra para registrarlo.";
+let guideFrom = null;
+function painGuide(){
+  guideFrom = editDay ? Object.assign({}, editDay) : null;
+  const rows = PAIN_TXT.slice(0, 8).map((t, i) => '<div class="gl'+(i >= 1 && i <= 5 ? " key" : "")+'"><b>'+i+'</b><span>'+esc(t)+'</span></div>').join("") +
+    '<div class="gl"><b>8+</b><span>Muy fuerte, incluso en reposo o sin dejarte dormir. Avísale a Santiago.</span></div>';
+  openSheet('<div class="sh"><h3>Cómo puntuar el dolor</h3><button class="btn ghost sm" data-guideback>'+(guideFrom ? "Volver" : "Cerrar")+'</button></div>'+
+    '<p>Puntúa cómo estuvo <b>cada brazo en el día, en general</b>, mejor en la noche. Más que acertar el número exacto, importa usar siempre la misma regla.</p>'+
+    '<div class="guide">'+rows+'</div>'+
+    '<h4>Si dudas entre dos números</h4><div class="guide q">'+
+      '<div class="gl"><b>0·1</b><span>¿Lo sentiste alguna vez en el día? Si sí, es 1.</span></div>'+
+      '<div class="gl"><b>1·2</b><span>¿Algún esfuerzo lo hizo aparecer? Si sí, 2. Si solo lo notaste de pasada, 1.</span></div>'+
+      '<div class="gl"><b>2·3</b><span>¿Fue algo puntual que se fue en minutos? Es 2. ¿Volvió varias veces con cosas normales? Es 3.</span></div>'+
+      '<div class="gl"><b>3·4</b><span>¿Te hizo cambiar cómo hacías algo? Si sí, 4.</span></div>'+
+      '<div class="gl"><b>4·5</b><span>¿Dejaste de hacer algo o dolió en reposo? Si sí, 5.</span></div></div>'+
+    '<p class="small" style="margin-top:12px">Si después de esas preguntas sigues dudando, elige el más alto y anota por qué en Notas.</p>'+
+    '<p class="small muted">Esta guía es para que seas consistente, no es una escala clínica. Vale la pena mostrársela a Santiago.</p>', "[data-guideback]");
+}
 function regForm(dr, px, status, dirty, saveLbl){
   const ids = px === "p" ? {o: "o-", save: "d-save", st: "d-status"} : {o: px+"o-", save: px+"-save", st: px+"-status"};
   const pr = (field, label) => {
     const v = dr[field], set = typeof v === "number";
     return '<div class="pr'+(set?"":" unset")+'"><label for="'+px+'-'+field+'">'+label+'<output id="'+ids.o+field+'">'+(set ? v : "Sin registrar")+'</output></label>'+
-      '<input type="range" min="0" max="10" step="1" id="'+px+'-'+field+'" data-pain="'+field+'" value="'+(set?v:0)+'"><div class="scale" aria-hidden="true"><span>0 nada</span><span>10 el peor</span></div></div>';
+      '<input type="range" min="0" max="10" step="1" id="'+px+'-'+field+'" data-pain="'+field+'" value="'+(set?v:0)+'" aria-describedby="'+px+'-a-'+field+'"><div class="scale" aria-hidden="true"><span>0 nada</span><span>10 el peor</span></div>'+
+      '<p class="anchor" id="'+px+'-a-'+field+'">'+esc(painTxt(v))+'</p></div>';
   };
   const brk = BRK.map((t,i) => '<button class="seg'+(dr.breaks === i+1 ? " on" : "")+'" data-breaks="'+(i+1)+'" aria-pressed="'+(dr.breaks === i+1)+'">'+t+'</button>').join("");
-  return '<div class="pain">'+pr("painL","Dolor brazo izquierdo")+pr("painR","Dolor brazo derecho")+
+  return '<div class="pain"><p class="small muted hint">Puntúa cómo estuvo cada brazo en el día, en general. <button class="linkish" data-painguide>Ver guía del 0 al 10</button></p>'+pr("painL","Dolor brazo izquierdo")+pr("painR","Dolor brazo derecho")+
     '<div class="pr"><span class="lbl">Medios físicos</span><div class="toggles">'+
       '<button class="tog'+(dr.ice ? " on" : "")+'" data-med="ice" aria-pressed="'+!!dr.ice+'">Hielo</button>'+
       '<button class="tog'+(dr.heat ? " on" : "")+'" data-med="heat" aria-pressed="'+!!dr.heat+'">Calor</button></div></div>'+
@@ -1053,13 +1096,13 @@ function historyHtml(){
   const more = key(addDays(today, -histDays)) >= first;
   return '<div class="days">'+rows+'</div>'+(more ? '<div class="row"><button class="btn ghost" data-morehist>Ver días anteriores</button></div>' : '');
 }
-function editDaySheet(k){
+function editDaySheet(k, keep){
   if (k === key(new Date())){ tab = "hoy"; closeSheet(); render(); syncNav(); const sb2 = $("#d-save"); if (sb2) sb2.scrollIntoView({block:"center"}); return; }
   const l = state.logs[k] || {};
-  editDay = {key: k, painL: l.painL, painR: l.painR, ice: !!l.ice, heat: !!l.heat, breaks: l.breaks, note: l.note || ""};
+  editDay = keep && keep.key === k ? keep : {key: k, painL: l.painL, painR: l.painR, ice: !!l.ice, heat: !!l.heat, breaks: l.breaks, note: l.note || ""};
   const st = dayStats(k), has = !!logSummary(l);
   openSheet('<div class="sh"><div><h3>'+esc(dayName(k))+'</h3><p class="muted small" style="margin:4px 0 0">'+(st.total ? "Ese día hiciste " + st.done + " de " + st.total + " ejercicios." : "Ese día no marcaste ejercicios.")+'</p></div><button class="btn ghost sm" data-close>Cerrar</button></div>'+
-    regForm(editDay, "e", "Sin cambios", false, "Guardar cambios")+
+    regForm(editDay, "e", editDirty() ? '<span class="dirty">Cambios sin guardar</span>' : "Sin cambios", editDirty(), "Guardar cambios")+
     (has ? '<div class="row" style="margin-top:14px"><button class="btn danger" data-clearday="'+k+'">Borrar el registro de este día</button></div>' : ''), "[data-close]");
 }
 function commitEdit(){
@@ -1081,17 +1124,18 @@ function fibersSvg(n){
   }
   return '<svg viewBox="0 0 '+W+' '+(rows*gap+8)+'" role="img" aria-label="'+n+' de '+rows+' fibras alineadas">'+p+'</svg>';
 }
-const PAIN_N = 28;
+const PAIN_N = 28, P_TOP = 8, P_H = 110, B_TOP = P_TOP + P_H + 18, B_H = 26;
 function painSeries(){
   const today = new Date(), out = [];
   for (let i = 0; i < PAIN_N; i++){ const k = key(addDays(today, i-(PAIN_N-1))), l = state.logs[k] || {};
     const L = typeof l.painL === "number" ? l.painL : null, R = typeof l.painR === "number" ? l.painR : null;
-    out.push({k, L, R, M: L === null && R === null ? null : Math.max(L === null ? -1 : L, R === null ? -1 : R)}); }
+    const st = dayStats(k);
+    out.push({k, L, R, M: L === null && R === null ? null : Math.max(L === null ? -1 : L, R === null ? -1 : R), frac: st.total ? Math.min(1, st.done/st.total) : 0, full: st.full}); }
   return out;
 }
 function chartSvg(){
   const arms = state.painView === "arms", data = painSeries();
-  const W = 340, x0 = 24, x1 = arms ? W - 30 : W - 8, top = 8, H = 120, base = top + H;
+  const W = 340, x0 = 24, x1 = arms ? W - 30 : W - 8, top = P_TOP, H = P_H, base = top + H;
   const X = i => x0 + i*(x1 - x0)/(PAIN_N - 1), Y = v => top + (10 - v)/10*H;
   let grid = "";
   for (let v = 0; v <= 10; v += 2) grid += '<line x1="'+x0+'" x2="'+x1+'" y1="'+Y(v)+'" y2="'+Y(v)+'" style="stroke:var(--line)"'+(v ? ' stroke-dasharray="2 4"' : '')+'/><text x="'+(x0-6)+'" y="'+(Y(v)+3.5)+'" class="tx" text-anchor="end">'+v+'</text>';
@@ -1117,11 +1161,14 @@ function chartSvg(){
     if (yr !== null) labels += '<text x="'+(x1+6)+'" y="'+(yr+3.5)+'" class="tx">Der</text>';
   } else lines = line("M", "--ink", false, "ci").svg;
   const xl = i => parseKey(data[i].k).toLocaleDateString("es-CO", {day:"numeric", month:"short"}).replace(".", "");
-  const xlab = '<text x="'+x0+'" y="'+(base+14)+'" class="tx">'+xl(0)+'</text><text x="'+X(14)+'" y="'+(base+14)+'" class="tx" text-anchor="middle">'+xl(14)+'</text><text x="'+x1+'" y="'+(base+14)+'" class="tx" text-anchor="end">hoy</text>';
+  const bBase = B_TOP + B_H, bw = Math.max(3, (x1 - x0)/(PAIN_N - 1) - 3);
+  let bars = '<text x="'+x0+'" y="'+(B_TOP-5)+'" class="tx">Sesión hecha</text><line x1="'+x0+'" x2="'+x1+'" y1="'+bBase+'" y2="'+bBase+'" style="stroke:var(--line)"/>';
+  data.forEach((d, i) => { if (d.frac > 0){ const h = Math.max(3, d.frac*B_H); bars += '<rect x="'+(X(i)-bw/2).toFixed(1)+'" y="'+(bBase-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" style="fill:var(--body)" opacity="'+(d.full ? .85 : .4)+'"/>'; } });
+  const xlab = '<text x="'+x0+'" y="'+(bBase+14)+'" class="tx">'+xl(0)+'</text><text x="'+X(14)+'" y="'+(bBase+14)+'" class="tx" text-anchor="middle">'+xl(14)+'</text><text x="'+x1+'" y="'+(bBase+14)+'" class="tx" text-anchor="end">hoy</text>';
   let hits = "";
-  data.forEach((d, i) => { const w = (x1 - x0)/(PAIN_N - 1); hits += '<rect data-pday="'+i+'" x="'+(X(i) - w/2).toFixed(1)+'" y="'+top+'" width="'+w.toFixed(1)+'" height="'+(H+18)+'" style="fill:transparent;cursor:pointer"/>'; });
-  return '<svg viewBox="0 0 '+W+' '+(base+20)+'" role="img" aria-label="Dolor de los últimos 28 días, escala de 0 a 10">'+grid+xlab+
-    '<line id="pday-line" x1="0" x2="0" y1="'+top+'" y2="'+base+'" style="stroke:var(--muted)" stroke-width="1" visibility="hidden"/>'+lines+labels+'<g id="pday-dots"></g>'+hits+'</svg>';
+  data.forEach((d, i) => { const w = (x1 - x0)/(PAIN_N - 1); hits += '<rect data-pday="'+i+'" x="'+(X(i) - w/2).toFixed(1)+'" y="'+top+'" width="'+w.toFixed(1)+'" height="'+(bBase - top)+'" style="fill:transparent;cursor:pointer"/>'; });
+  return '<svg viewBox="0 0 '+W+' '+(bBase+20)+'" role="img" aria-label="Dolor de 0 a 10 y sesión hecha, últimos 28 días">'+grid+bars+xlab+
+    '<line id="pday-line" x1="0" x2="0" y1="'+top+'" y2="'+bBase+'" style="stroke:var(--muted)" stroke-width="1" visibility="hidden"/>'+lines+labels+'<g id="pday-dots"></g>'+hits+'</svg>';
 }
 function painDayText(i){
   const d = painSeries()[i], name = parseKey(d.k).toLocaleDateString("es-CO", {weekday:"short", day:"numeric", month:"short"}).replace(/\./g, "");
@@ -1131,11 +1178,11 @@ function painDayText(i){
   return nm + ": izquierdo " + (d.L === null ? "sin dato" : d.L) + ", derecho " + (d.R === null ? "sin dato" : d.R) + ex + ".";
 }
 function painHtml(){
-  const arms = state.painView === "arms", data = painSeries(), hasAny = data.some(d => d.M !== null);
+  const arms = state.painView === "arms", data = painSeries(), hasAny = data.some(d => d.M !== null || d.frac > 0);
   const legend = arms ? '<div class="legend"><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armL)" stroke-width="2"/><circle cx="13" cy="5" r="4" style="fill:var(--armL)"/></svg>Izquierdo</span><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armR)" stroke-width="2" stroke-dasharray="5 4"/><rect x="9" y="1" width="8" height="8" rx="1.5" style="fill:var(--armR)"/></svg>Derecho</span></div>'
-    : '<p class="small muted" style="margin:6px 0 0">La línea muestra el brazo que más dolió cada día, no un promedio.</p>';
+    : '<p class="small muted" style="margin:6px 0 0">La línea es el brazo que más dolió cada día, no un promedio.</p>';
   return '<div class="segs two" role="group" aria-label="Cómo ver el dolor"><button class="seg'+(arms ? "" : " on")+'" data-painview="max" aria-pressed="'+!arms+'">Brazo que más dolió</button><button class="seg'+(arms ? " on" : "")+'" data-painview="arms" aria-pressed="'+arms+'">Cada brazo</button></div>'+
-    '<div class="chart">'+(hasAny ? chartSvg() + legend + '<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle. 0 es nada de dolor y 10 el peor.</p>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
+    '<div class="chart">'+(hasAny ? chartSvg() + legend + '<p class="small muted" style="margin:4px 0 0">Las barras de abajo son cuánto de la sesión hiciste ese día, con las mismas fechas: así ves si al entrenar más baja el dolor.</p><p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
 }
 
 function habitStats(days){
@@ -1154,9 +1201,9 @@ function habitsHtml(){
     ice += '<i class="'+(l.ice ? "on" : "")+'"></i>'; heat += '<i class="'+(l.heat ? "on" : "")+'"></i>';
     brk += '<i class="'+(typeof l.breaks === "number" ? "l"+l.breaks : "")+'"></i>'; }
   const h = habitStats(14);
-  return '<div class="habits" role="img" aria-label="Sesiones, hielo, calor y pausas activas de los últimos 28 días">'+
-    '<div class="hrow"><span>Sesión</span>'+ses+'</div><div class="hrow"><span>Hielo</span>'+ice+'</div><div class="hrow"><span>Calor</span>'+heat+'</div><div class="hrow"><span>Pausas</span>'+brk+'</div>'+
-    '<p class="small muted" style="margin:6px 0 0">En Sesión, más intenso es más completa. Últimas 2 semanas: hielo '+h.ice+(h.ice === 1 ? " día" : " días")+', calor '+h.heat+(h.heat === 1 ? " día" : " días")+(h.breaks !== null ? ", pausas activas "+f1c(h.breaks)+" de 5 en promedio" : "")+'.</p></div>';
+  return '<div class="habits" role="img" aria-label="Hielo, calor y pausas activas de los últimos 28 días">'+
+    '<div class="hrow"><span>Hielo</span>'+ice+'</div><div class="hrow"><span>Calor</span>'+heat+'</div><div class="hrow"><span>Pausas</span>'+brk+'</div>'+
+    '<p class="small muted" style="margin:6px 0 0">Últimas 2 semanas: hielo '+h.ice+(h.ice === 1 ? " día" : " días")+', calor '+h.heat+(h.heat === 1 ? " día" : " días")+(h.breaks !== null ? ", pausas activas "+f1c(h.breaks)+" de 5 en promedio" : "")+'.</p></div>';
 }
 function insight(){
   const ks = Object.keys(state.logs); if (!ks.length) return "";
@@ -1184,7 +1231,7 @@ function viewProgreso(){
   const fd = fund(), sp = (state.spends || []).slice().reverse();
   const spends = sp.slice(0, showAllSp ? sp.length : 4).map(x => '<div class="spend"><span>'+esc(x.what || "Gusto")+' <span class="muted small">'+esc(fmtShort(x.d))+'</span></span><span class="sa"><b>'+money(x.amount)+'</b><button class="icon-btn" data-delspend="'+x.id+'">Quitar</button></span></div>').join("");
   const fundHtml = '<h2>Tu fondo</h2><div class="fund"><div class="fundtop"><b'+(fd.left < 0 ? ' class="neg"' : '')+'>'+money(fd.left)+'</b><span class="small muted">'+(fd.left < 0 ? "te pasaste" : "disponibles")+'</span></div>'+
-    '<p class="small muted" style="margin:4px 0 0">Ganaste '+money(fd.earned)+' ('+fd.days+(fd.days === 1 ? " día" : " días")+' y '+fd.weeks+(fd.weeks === 1 ? " semana cumplida" : " semanas cumplidas")+') y gastaste '+money(fd.spent)+'.</p>'+
+    '<p class="small muted" style="margin:4px 0 0">'+(fd.earned || fd.spent ? 'Ganaste '+money(fd.earned)+' ('+fd.days+(fd.days === 1 ? " día" : " días")+' y '+fd.weeks+(fd.weeks === 1 ? " semana cumplida" : " semanas cumplidas")+') y gastaste '+money(fd.spent)+'.' : 'Todavía no has sumado. Tu primer día cumplido te da '+money(FUND_DAY)+'.')+'</p>'+
     '<p class="small" style="margin:10px 0 0">'+money(FUND_DAY)+' por cada día que cuenta para tu meta y '+money(FUND_WEEK)+' por cada semana cumplida. <b>Tus gustos salen de aquí y de ningún otro lado.</b> Pásalo cada semana a un bolsillo aparte.</p>'+
     (spends ? '<div class="spends">'+spends+'</div>'+(sp.length > 4 ? '<button class="icon-btn" data-allsp>'+(showAllSp ? "Ver menos" : "Ver todos ("+sp.length+")")+'</button>' : '') : '')+
     '<div class="row" style="margin-top:12px"><button class="btn" data-spend>Registrar un gusto</button></div></div>';
@@ -1195,10 +1242,9 @@ function viewProgreso(){
       '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p></div>'+
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
     fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
-    '<h2>Dolor, 28 días</h2>'+painHtml()+
-    '<h2>Constancia y hábitos, 28 días</h2>'+habitsHtml()+
+    '<h2>Dolor y constancia, 28 días</h2>'+painHtml()+insight()+
+    '<h2>Hábitos, 28 días</h2>'+habitsHtml()+
     '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
-    insight()+
     '<h2>Cómo sumas puntos</h2><p class="small muted">10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Aparte, tu fondo suma plata real. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p>';
 }
 
@@ -1289,7 +1335,7 @@ function openSheet(html, focusSel){
   const f = focusSel ? $("#sheet").querySelector(focusSel) : $("#sheet").querySelector("input:not([type=file]),select,textarea");
   if (f) f.focus();
 }
-function closeSheet(){ stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; $("#scrim").hidden = true; $("#sheet").innerHTML = ""; render(); syncNav(); }
+function closeSheet(){ stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; guideFrom = null; $("#scrim").hidden = true; $("#sheet").innerHTML = ""; render(); syncNav(); }
 
 /* back button: one history entry guards any open sheet or tab other than Hoy */
 let guarded = false, expectPop = false, formFrom = null;
@@ -1304,6 +1350,7 @@ window.addEventListener("popstate", () => {
   if (!$("#scrim").hidden){
     if (backTo){ draft = backTo.draft; backTo = null; drawSession(); }
     else if (formFrom){ const id = formFrom; formFrom = null; openDetail(id); }
+    else if (guideFrom){ const g = guideFrom; guideFrom = null; editDaySheet(g.key, g); }
     else closeSheet();
   } else if (tab !== "hoy"){ tab = "hoy"; render(); window.scrollTo(0,0); }
   syncNav();
@@ -1540,7 +1587,7 @@ const drOf = el => inSheet(el) && editDay ? editDay : getDraft();
 function touched(el){ if (inSheet(el) && editDay) updateEditBar(); else keepDraft(); }
 function setPainDraft(f, v, el){
   drOf(el)[f] = Number(v); const pr = el.closest(".pr"), o = pr && pr.querySelector("output"); if (o) o.textContent = v;
-  if (pr) pr.classList.remove("unset"); touched(el);
+  if (pr){ pr.classList.remove("unset"); const a = pr.querySelector(".anchor"); if (a) a.textContent = painTxt(Number(v)); } touched(el);
 }
 document.addEventListener("click", ev => {
   const pf = ev.target.dataset && ev.target.dataset.pain;
@@ -1549,7 +1596,7 @@ document.addEventListener("click", ev => {
   if (pdEl){ const i = Number(pdEl.dataset.pday), ln = $("#pday-line"), out = $("#pday");
     if (ln){ const x = Number(pdEl.getAttribute("x")) + Number(pdEl.getAttribute("width"))/2; ln.setAttribute("x1", x); ln.setAttribute("x2", x); ln.setAttribute("visibility", "visible"); }
     const dots = $("#pday-dots"), dd = painSeries()[i];
-    if (dots && ln){ const x = Number(ln.getAttribute("x1")), Yv = v => 8 + (10 - v)/10*120, arms = state.painView === "arms"; let g = "";
+    if (dots && ln){ const x = Number(ln.getAttribute("x1")), Yv = v => P_TOP + (10 - v)/10*P_H, arms = state.painView === "arms"; let g = "";
       if (arms){ if (dd.L !== null) g += '<circle cx="'+x+'" cy="'+Yv(dd.L)+'" r="4.5" style="fill:var(--armL);stroke:var(--surface)" stroke-width="2"/>';
         if (dd.R !== null) g += '<rect x="'+(x-4.5)+'" y="'+(Yv(dd.R)-4.5)+'" width="9" height="9" rx="1.5" style="fill:var(--armR);stroke:var(--surface)" stroke-width="2"/>'; }
       else if (dd.M !== null) g += '<circle cx="'+x+'" cy="'+Yv(dd.M)+'" r="4.5" style="fill:var(--ink);stroke:var(--surface)" stroke-width="2"/>';
@@ -1566,6 +1613,8 @@ document.addEventListener("click", ev => {
     t.closest(".segs").querySelectorAll("[data-breaks]").forEach(b => { const on = Number(b.dataset.breaks) === dr.breaks; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); }); touched(t); return; }
   if (d.savelog !== undefined){ if (inSheet(t) && editDay) commitEdit(); else commitDraft(); return; }
   if (d.editday){ editDaySheet(d.editday); return; }
+  if (d.painguide !== undefined){ painGuide(); return; }
+  if (d.guideback !== undefined){ const g = guideFrom; guideFrom = null; if (g) editDaySheet(g.key, g); else closeSheet(); return; }
   if (d.morehist !== undefined){ histDays += 14; render(); return; }
   if (d.clearday){
     if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez para borrarlo"; return; }
@@ -1581,7 +1630,7 @@ document.addEventListener("click", ev => {
     return;
   }
   if (d.done){
-    stopTimer(); lastDoneId = d.done;
+    stopTimer(); lastDoneId = d.done; startNote = false;
     const r = setDone(d.done, true), nx = nextUndone(d.done);
     if (nx){ openDetail(nx); toast(r.msg || "Hecho. +10"); }
     else { closeSheet(); render(r.pop); toast(r.msg || "Hecho. +10"); window.scrollTo(0,0); }
@@ -1593,8 +1642,8 @@ document.addEventListener("click", ev => {
   if (d.skiprest !== undefined || d.stoptmr !== undefined){ stopTimer(); drawFlow(); return; }
   if (d.snooze){ const e = exById(d.snooze); if (e){ e.progSnooze = key(addDays(new Date(), 7)); save(); drawDetail(); toast("Te lo recuerdo en una semana"); } return; }
   if (d.rest){ state.restSec = Math.min(180, Math.max(15, (state.restSec || 60) + Number(d.rest))); save(); render(); return; }
-  if (d.next !== undefined){ stopTimer(); const nx = nextUndone(detailId); if (nx) openDetail(nx); return; }
-  if (d.detail){ openDetail(d.detail); if (d.start !== undefined) toast(bundleMsg()); return; }
+  if (d.next !== undefined){ stopTimer(); startNote = false; const nx = nextUndone(detailId); if (nx) openDetail(nx); return; }
+  if (d.detail){ startNote = d.start !== undefined; openDetail(d.detail); return; }
   if (d.spend !== undefined){ spendForm(); return; }
   if (d.savespend !== undefined){
     const amt = Math.round(Number(($("#sp-amt").value || "").replace(/[^0-9]/g, "")) || 0), what = $("#sp-what").value.trim();
