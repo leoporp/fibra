@@ -52,8 +52,15 @@ button{cursor:pointer}
 .fx-half{stroke:var(--accent);opacity:.45;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .fx-off{stroke:var(--line);fill:none;stroke-linecap:round;stroke-linejoin:round}
 .fx-amb{stroke:var(--fiber);fill:none;stroke-linecap:round;stroke-linejoin:round}
-.fx-new{stroke-dasharray:420;stroke-dashoffset:420;animation:fxdraw .8s cubic-bezier(.2,.8,.2,1) forwards}
-@keyframes fxdraw{to{stroke-dashoffset:0}}
+/* movimiento: respuesta a lo que haces, con la identidad de las hebras */
+:root{--e-out:cubic-bezier(.22,1,.36,1);--e-spring:cubic-bezier(.34,1.4,.64,1);--t1:140ms;--t2:240ms;--t3:420ms}
+.bundle path,.strands path{transition:d .75s var(--e-out),stroke .5s var(--e-out),stroke-width .5s var(--e-out),opacity .5s}
+.bundle .sheen{fill:none;stroke:#FFF6EF;stroke-width:2.2;stroke-linecap:round;stroke-dasharray:.14 1;stroke-dashoffset:.14;opacity:0}
+.celebrate .sheen{animation:sheen 1s var(--e-out) calc(.5s + var(--i)*80ms) both}
+@keyframes sheen{0%{opacity:.95;stroke-dashoffset:.14}100%{opacity:0;stroke-dashoffset:-1}}
+.celebrate .fx-on{animation:fpulse .7s var(--e-spring) calc(.25s + var(--i)*80ms) both}
+@keyframes fpulse{45%{stroke-width:6.5}}
+.celebrate p{animation:swapin .5s var(--e-out) .5s both}
 .bundle{margin:-4px 0 18px}
 .bundle svg{display:block;width:100%;height:auto}
 .bundle p{margin:6px 0 0;font-size:14px;color:var(--muted)}
@@ -126,13 +133,33 @@ button{cursor:pointer}
 .lastline{margin:0 0 8px}
 .loadedit{display:flex;gap:8px;margin:0 0 8px}
 .loadedit input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--surface)}
+/* respuesta al tacto */
+.btn,.chip,.tog,.seg,.stepper button,.repctl button,.sbtns button,.next,.thumb{transition:transform var(--t1) var(--e-out),background-color var(--t2) var(--e-out),border-color var(--t2) var(--e-out),color var(--t2) var(--e-out),opacity var(--t2)}
+.btn:active,.chip:active,.tog:active,.seg:active,.stepper button:active,.repctl button:active,.sbtns button:active{transform:scale(.95)}
+.dayrow,.chkrow,.ex{transition:transform var(--t1) var(--e-out),border-color var(--t2) var(--e-out),background-color var(--t2) var(--e-out)}
+.dayrow:active,.chkrow:active,.next:active,.ex:active{transform:scale(.985)}
+.ex.juston{animation:exfill .5s var(--e-out)}
+.ex.juston .ck{animation:ckpop .5s var(--e-spring)}
+@keyframes exfill{from{background:var(--surface);border-color:var(--line)}}
+@keyframes ckpop{0%{transform:scale(.5)}100%{transform:scale(1)}}
+.dots i{transition:background-color var(--t2) var(--e-out)}
+.dots i.new{animation:dotpop .45s var(--e-spring)}
+@keyframes dotpop{0%{transform:scale(.3)}100%{transform:scale(1)}}
+#rep-n.bump{animation:bump .28s var(--e-spring)}
+@keyframes bump{50%{transform:scale(1.18)}}
+.regin .pain{animation:swapin var(--t3) var(--e-out) both}
+.chkrow .box{transition:background-color var(--t2) var(--e-out),border-color var(--t2) var(--e-out)}
+.chkrow.on .box{animation:ckpop .4s var(--e-spring)}
 .days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .dayrow b{display:block;font-size:15px}
 .dayrow .go{flex:none;color:var(--accent);font-weight:700}
 .dayrow.on{border-left-color:var(--accent)}
 .sessmeta{margin:-6px 0 12px;color:var(--muted);font-size:14px}
-@media (prefers-reduced-motion: reduce){ .fx-new{animation:none;stroke-dashoffset:0} }
+@media (prefers-reduced-motion: reduce){
+  :root{--t1:1ms;--t2:1ms;--t3:1ms}
+  *,*::before,*::after{animation-duration:1ms !important;animation-delay:0s !important;transition-duration:1ms !important;transition-delay:0s !important}
+}
 .sync{font-size:13px;color:var(--muted)}
 button.sync{background:none;border:0;padding:8px 0;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;text-align:right}
 .next.cloud{border-left-color:var(--accent)}
@@ -296,11 +323,51 @@ textarea.out{width:100%;min-height:160px;border:1px solid var(--line);border-rad
 /* nav */
 .tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
 .tabs div{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
-.tabs button{background:none;border:0;padding:14px 0 16px;font-weight:700;color:var(--muted);font-size:16px;border-top:3px solid transparent}
-.tabs button[aria-current="page"]{color:var(--ink);border-top-color:var(--accent)}
+.tabs div{position:relative}
+.tabs .ind{position:absolute;top:0;left:0;width:calc(100% / 3);height:3px;border-radius:0 0 3px 3px;background:var(--accent);transform:translateX(calc(var(--ti, 0) * 100%));transition:transform var(--t3) var(--e-spring)}
+.tabs button{background:none;border:0;padding:9px 0 11px;font-weight:700;color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color var(--t2) var(--e-out)}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:stroke var(--t2)}
+.tabs svg circle{fill:currentColor;stroke:none}
+.tabs button[aria-current="page"]{color:var(--ink)}
+.tabs button[aria-current="page"] svg{stroke:var(--accent)}
+.tabs button[aria-current="page"] svg circle{fill:var(--accent)}
+.tabs button.pop svg path{animation:drawp .6s var(--e-out) both}
+.tabs button.pop svg path:nth-child(2){animation-delay:60ms}.tabs button.pop svg path:nth-child(3){animation-delay:120ms}
+@keyframes drawp{from{stroke-dasharray:1 1;stroke-dashoffset:1}to{stroke-dasharray:1 1;stroke-dashoffset:0}}
+/* cambio de pestaña */
+#view{view-transition-name:view}
+.tabs{view-transition-name:tabs}
+.top{view-transition-name:top}
+::view-transition-group(view){animation-duration:0s}
+::view-transition-old(root),::view-transition-new(root),::view-transition-old(tabs),::view-transition-new(tabs),::view-transition-old(top),::view-transition-new(top){animation:none}
+::view-transition-old(view){animation:vtOutL 160ms var(--e-out) both}
+::view-transition-new(view){animation:vtInR 320ms var(--e-out) both}
+html[data-vt=back]::view-transition-old(view){animation-name:vtOutR}
+html[data-vt=back]::view-transition-new(view){animation-name:vtInL}
+@keyframes vtOutL{to{opacity:0;transform:translateX(-24px)}}
+@keyframes vtInR{from{opacity:0;transform:translateX(28px)}}
+@keyframes vtOutR{to{opacity:0;transform:translateX(24px)}}
+@keyframes vtInL{from{opacity:0;transform:translateX(-28px)}}
+/* al entrar a Progreso */
+#view.enter .bar span{animation:growx 1s var(--e-out) .1s both;transform-origin:left}
+#view.enter .revealr{animation:growx 1.1s var(--e-out) .15s both;transform-box:fill-box;transform-origin:left}
+#view.enter .sbar{animation:growy .6s var(--e-out) both;transform-box:fill-box;transform-origin:bottom}
+#view.enter .fibers path{animation:fadein .6s var(--e-out) both}
+@keyframes growx{from{transform:scaleX(0)}}
+@keyframes growy{from{transform:scaleY(0)}}
+@keyframes fadein{from{opacity:0}}
 
 /* sheet */
-.scrim{position:fixed;inset:0;background:rgba(10,14,20,.5);z-index:10;display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:fixed;inset:0;background:rgba(10,14,20,0);z-index:10;display:flex;align-items:flex-end;justify-content:center;transition:background-color var(--t2) var(--e-out)}
+.scrim.open{background:rgba(10,14,20,.5)}
+.scrim:not(.open){pointer-events:none}
+.scrim .sheet{transform:translateY(105%);transition:transform var(--t3) var(--e-out);will-change:transform}
+.scrim.open .sheet{transform:none}
+.scrim.drag .sheet{transition:none}
+.sheet.swap > *{animation:swapin var(--t2) var(--e-out) both}
+.sheet.swap > .grab{animation:none}
+@keyframes swapin{from{opacity:0;transform:translateY(8px)}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:-10px auto 12px}
 .sheet{background:var(--bg);width:100%;max-width:520px;max-height:92%;overflow:auto;border-radius:20px 20px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom,0px))}
 .sh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
 .sheet h3{font-family:var(--display);font-size:24px;line-height:1.15;margin:0}
@@ -318,8 +385,8 @@ textarea.out{width:100%;min-height:160px;border:1px solid var(--line);border-rad
 .sbtns button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--bg)}
 .sbtns button:disabled{opacity:.35}
 
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:20;max-width:90%;text-align:center}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px) scale(.96);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;opacity:0;pointer-events:none;transition:opacity var(--t2) var(--e-out), transform var(--t3) var(--e-spring);z-index:20;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 .toast.top{bottom:auto;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%) translateY(-20px)}
 .toast.top.show{transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion: reduce){
@@ -333,10 +400,10 @@ textarea.out{width:100%;min-height:160px;border:1px solid var(--line);border-rad
   <div class="top"><span class="brand"><svg viewBox="0 0 26 26" aria-hidden="true"><path d="M4 7 H22" class="fx-on" stroke-width="2.6"/><path d="M4 13 H22" class="fx-on" stroke-width="2.6"/><path d="M4 19 Q7 16 10 19 T16 19 T22 19" class="fx-amb" stroke-width="2.2"/></svg>Fibra</span><button class="sync" id="sync" data-account>Cargando…</button></div>
   <main id="view"></main>
 </div>
-<nav class="tabs" aria-label="Secciones"><div>
-  <button data-tab="hoy">Hoy</button>
-  <button data-tab="progreso">Progreso</button>
-  <button data-tab="rutina">Rutina</button>
+<nav class="tabs" aria-label="Secciones"><div><span class="ind" aria-hidden="true"></span>
+  <button data-tab="hoy"><svg viewBox="0 0 22 22" aria-hidden="true"><path pathLength="1" d="M3 7h16"/><path pathLength="1" d="M3 15c2.7-3 5.3 3 8 0s5.3-3 8 0"/></svg>Hoy</button>
+  <button data-tab="progreso"><svg viewBox="0 0 22 22" aria-hidden="true"><path pathLength="1" d="M5 18v-5"/><path pathLength="1" d="M11 18v-9"/><path pathLength="1" d="M17 18V5"/></svg>Progreso</button>
+  <button data-tab="rutina"><svg viewBox="0 0 22 22" aria-hidden="true"><path pathLength="1" d="M8 6h11"/><path pathLength="1" d="M8 11h11"/><path pathLength="1" d="M8 16h11"/><circle cx="4" cy="6" r="1.3"/><circle cx="4" cy="11" r="1.3"/><circle cx="4" cy="16" r="1.3"/></svg>Rutina</button>
 </div></nav>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -478,13 +545,11 @@ function frameOf(art, t, loop, thumb){
 const VB = {"ecc_ext": "2 31 179 89", "iso_ext": "2 5 210 107", "flex": "2 30 179 87", "prosup": "8 8 205 142", "radial": "2 1 194 149", "grip": "36 32 152 126", "fingext": "35 30 142 120", "pinch": "0 22 158 118", "tri_push": "0 3 180 155", "tri_oh": "0 0 195 150", "row": "18 17 180 117", "extrot": "-21 42 242 106"};
 Object.keys(VB).forEach(k => { ART[k].vb = VB[k]; });
 function wave(x0, x1, y, amp, ph){
-  if (amp <= 0.05) return "M"+x0+" "+y+" L"+x1+" "+y;
   let d = "M"+x0+" "+f1(y + Math.sin(ph)*amp);
   for (let x = x0 + 6; x <= x1; x += 6) d += " L"+x+" "+f1(y + Math.sin((x - x0)/13 + ph)*amp);
   return d;
 }
 function vwave(x, y0, y1, amp, ph){
-  if (amp <= 0.05) return "M"+x+" "+y0+" L"+x+" "+y1;
   let d = "M"+f1(x + Math.sin(ph)*amp)+" "+y0;
   for (let y = y0 + 4; y <= y1; y += 4) d += " L"+f1(x + Math.sin((y - y0)/7 + ph)*amp)+" "+y;
   return d;
@@ -554,6 +619,16 @@ let state = blank(), storedV = 0;
 try { const raw = localStorage.getItem(LS_KEY); if (raw){ state = JSON.parse(raw); storedV = state.v || 1; } } catch(e) {}
 state = migrate(state);
 let lastDoneId = null;
+const morphSet = new Set(); let weekMorph = false, celebratePending = false;
+function applyMorphs(){
+  const els = document.querySelectorAll("#view [data-to]"); if (!els.length) return;
+  const late = Date.now() - sheetClosedAt < 400;
+  els.forEach(el => { el.style.d = 'path("' + el.getAttribute("d") + '")'; });
+  void document.body.offsetWidth;
+  els.forEach((el, j) => { const to = el.dataset.to;
+    if (late) el.style.transitionDelay = (180 + j*40) + "ms";
+    el.style.d = 'path("' + to + '")'; el.setAttribute("d", to); el.setAttribute("class", el.dataset.cls); el.setAttribute("stroke-width", el.dataset.sw); el.removeAttribute("data-to"); });
+}
 let tab = "hoy", showAllRw = false, showAllSp = false, writing = false, pendingWrite = false, timer = null;
 const CUR_V = 8, CFG = window.FIBRA_CONFIG || {};
 let sb = null, session = null, lastSync = 0, dirty = false;
@@ -597,7 +672,7 @@ function mergeLocal(local){
   if (local.fundStart && (!state.fundStart || local.fundStart < state.fundStart)){ state.fundStart = local.fundStart; added = true; }
   return added;
 }
-function refreshOpen(){ if ($("#scrim").hidden) render(); else if (detailId) drawDetail(); }
+function refreshOpen(){ if (!sheetOpen) render(); else if (detailId) drawDetail(); }
 async function pull(){
   if (!cloudReady() || writing) return;
   setSync("syncing");
@@ -802,10 +877,11 @@ function setDone(id, val){
   const readyBefore = rewardsSorted().filter(x => x.i.ok && !x.r.claimed).length;
   const sess = sessionFor(tk), log = ensureLog(tk);
   if (sess) log.session = sess.id;
-  log.done[id] = val;
-  if (navigator.vibrate) try { navigator.vibrate(10); } catch(e){}
+  log.done[id] = val; morphSet.add(id);
   save();
   const nowFull = dayStats(tk).full, after = level().n, met = weekMet(monday(new Date()));
+  if (dayStats(tk).counts !== wasCounts || nowFull !== wasFull) weekMorph = true;
+  if (nowFull && !wasFull) celebratePending = true;
   const readyNow = rewardsSorted().filter(x => x.i.ok && !x.r.claimed).length;
   let msg = "";
   if (readyNow > readyBefore) msg = "Desbloqueaste una recompensa";
@@ -862,14 +938,13 @@ function tickTimer(){
   const pth = $("#tmr-path"); if (pth) pth.setAttribute("d", wave(4, 316, 12, 8*Math.min(1, left/(tmr.total*1000)), 0));
   if (left <= 0){
     const id = tmr.id, kind = tmr.kind; stopTimer();
-    if (navigator.vibrate) try { navigator.vibrate([200,100,200]); } catch(e){}
     beep(kind === "rest" ? 2 : 3);
     if (kind === "work") completeSet(id); else { drawFlow(); toast("A la siguiente serie"); }
   }
 }
 function setsDone(id){ const l = state.logs[key(new Date())]; return (l && l.sets && l.sets[id]) || 0; }
 const steps = e => Math.max(1, (e.sets || 1) * (e.perArm ? 2 : 1));
-let repN = null, repKey = "", loadEdit = false;
+let repN = null, repKey = "", loadEdit = false, dotPop = "", repBump = false, regAnim = false;
 function fmtReps(e, arr){
   if (!arr || !arr.length) return "";
   const v = arr.map(x => x === null || x === undefined ? "–" : x);
@@ -884,7 +959,7 @@ function lastTime(e){
 function completeSet(id, val){
   const e = exById(id); if (!e) return;
   const log = ensureLog(key(new Date())); log.sets = log.sets || {};
-  const total = steps(e), n = log.sets[id] = Math.min((log.sets[id] || 0) + 1, total);
+  const total = steps(e), n = log.sets[id] = Math.min((log.sets[id] || 0) + 1, total); dotPop = id + ":" + n;
   const got = val !== undefined ? val : (repN !== null && repKey === id + ":" + (n-1) ? repN : e.reps);
   if (e.reps){ log.reps = log.reps || {}; const arr = log.reps[id] = log.reps[id] || []; arr[n-1] = got; }
   if (e.load){ log.loads = log.loads || {}; if (!log.loads[id]) log.loads[id] = e.load; }
@@ -919,8 +994,10 @@ function drawFlow(){
     const st = steps(e), sdn = Math.min(setsDone(e.id), st), arm = e.perArm ? (sdn % 2 === 0 ? "brazo derecho" : "brazo izquierdo") : "";
     const setNo = Math.min(e.perArm ? Math.floor(sdn/2) + 1 : sdn + 1, total);
     let dots = '';
-    if (e.perArm) for (let i = 0; i < total; i++) dots += '<span class="pair"><i class="'+(2*i < sdn ? 'on' : '')+'"></i><i class="'+(2*i+1 < sdn ? 'on' : '')+'"></i></span>';
-    else for (let i = 0; i < total; i++) dots += '<i class="'+(i < sdn ? 'on' : '')+'"></i>';
+    const np = dotPop === e.id + ":" + sdn ? sdn - 1 : -1; dotPop = "";
+    const dc = j => (j < sdn ? 'on' : '') + (j === np ? ' new' : '');
+    if (e.perArm) for (let i = 0; i < total; i++) dots += '<span class="pair"><i class="'+dc(2*i)+'"></i><i class="'+dc(2*i+1)+'"></i></span>';
+    else for (let i = 0; i < total; i++) dots += '<i class="'+dc(i)+'"></i>';
     h += '<div class="sets"><div class="dots" aria-hidden="true">'+dots+'</div><span>'+(run && run.kind === "rest" ? "Después: serie " : "Serie ")+setNo+' de '+total+(arm ? ', '+arm : '')+'</span></div>'+loadLine+lastLine;
     if (run){
       h += '<div class="tmr"><b id="tmr-num">'+fmtSec(Math.max(0, Math.ceil((run.endsAt - Date.now())/1000)))+'</b><span>'+(run.kind === "rest" ? "Descanso" : "Sostén")+'</span></div>'+
@@ -930,7 +1007,8 @@ function drawFlow(){
       h += '<div class="row"><button class="btn" data-work="'+e.id+'">'+(arm ? arm.charAt(0).toUpperCase() + arm.slice(1) + ": " : (sdn ? "Siguiente serie: " : "Empezar: "))+e.reps+' segundos</button></div>';
     } else {
       const rk = e.id + ":" + sdn; if (repKey !== rk){ repKey = rk; repN = e.reps || null; }
-      h += (e.reps ? '<div class="repctl"><button data-rep="-1" aria-label="Una repetición menos">−</button><b id="rep-n">'+repN+'</b><button data-rep="1" aria-label="Una repetición más">+</button><span>'+(repN < e.reps ? 'de '+e.reps+' repeticiones' : 'repeticiones')+(arm ? ', '+arm : '')+'</span></div>'+
+      const rb = repBump; repBump = false;
+      h += (e.reps ? '<div class="repctl"><button data-rep="-1" aria-label="Una repetición menos">−</button><b id="rep-n"'+(rb ? ' class="bump"' : '')+'>'+repN+'</b><button data-rep="1" aria-label="Una repetición más">+</button><span>'+(repN < e.reps ? 'de '+e.reps+' repeticiones' : 'repeticiones')+(arm ? ', '+arm : '')+'</span></div>'+
         '<p class="small muted" style="margin:-4px 0 10px">Si no completaste las '+e.reps+', bájalo antes de marcar.</p>' : '')+
         '<div class="row"><button class="btn" data-setdone="'+e.id+'">'+(arm ? "Listo el "+arm : "Serie hecha")+'</button></div>';
     }
@@ -994,11 +1072,11 @@ function commitDraft(){
   ["painL","painR","breaks"].forEach(f => { if (typeof d[f] === "number") log[f] = d[f]; else delete log[f]; });
   log.ice = !!d.ice; log.heat = !!d.heat; log.note = (d.note || "").trim(); log.savedAt = Date.now();
   save(); try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
-  draftDay = null; regOpen = false; render();
+  draftDay = null; regOpen = false; regAnim = true; render(); regAnim = false;
   toast(!wasLogged && dayStats(d.key).logged ? "Registro guardado. +5" : "Registro guardado");
 }
 let toastT;
-function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.toggle("top", !$("#scrim").hidden); t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2800); }
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.toggle("top", sheetOpen); t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2800); }
 function rx(e){
   const parts = [];
   if (e.sets && e.reps) parts.push(e.sets + " × " + e.reps + (e.unit === "seg" ? " seg" : ""));
@@ -1022,7 +1100,7 @@ function thumbInner(e){
 }
 
 /* ---------- views ---------- */
-function viewHoy(pop){
+function viewHoy(){
   const today = new Date(), tk = key(today), mon = monday(today);
   const sess = sessionFor(tk), log = state.logs[tk] || {done:{}};
   const fmt = today.toLocaleDateString("es-CO",{weekday:"long", day:"numeric", month:"long"});
@@ -1037,18 +1115,24 @@ function viewHoy(pop){
   let week = "";
   for (let i=0;i<7;i++){
     const d = addDays(mon,i), k = key(d), st = dayStats(k), isToday = k === tk, fut = d > today && !isToday;
-    const cls = (st.full ? "fx-on" : st.counts ? "fx-half" : "fx-off") + (pop && isToday && st.counts ? " fx-new" : "");
-    const path = (st.full || st.counts) ? vwave(14, 6, 50, 0, 0) : vwave(14, 6, 50, 3.2, i*1.1);
-    week += '<div class="d'+(isToday ? " today" : "")+(fut ? " future" : "")+'"><svg viewBox="0 0 28 56" aria-hidden="true"><path d="'+path+'" class="'+cls+'" stroke-width="'+(st.full ? 4 : 3)+'"/></svg><span>'+DAYS[i]+'</span></div>';
+    const cls = st.full ? "fx-on" : st.counts ? "fx-half" : "fx-off";
+    const path = (st.full || st.counts) ? vwave(14, 6, 50, 0, i*1.1) : vwave(14, 6, 50, 3.2, i*1.1);
+    const wm = isToday && weekMorph && !sheetOpen, sw = st.full ? 4 : 3;
+    week += '<div class="d'+(isToday ? " today" : "")+(fut ? " future" : "")+'"><svg viewBox="0 0 28 56" aria-hidden="true"><path d="'+(wm ? vwave(14, 6, 50, st.counts ? 3.2 : 0, i*1.1) : path)+'"'+(wm ? ' data-to="'+path+'" data-cls="'+cls+'" data-sw="'+sw+'"' : '')+' class="'+(wm ? (st.counts ? "fx-off" : "fx-half") : cls)+'" stroke-width="'+sw+'"/></svg><span>'+DAYS[i]+'</span></div>';
   }
   let bundle = "";
   if (items.length){
     const gap = 13, H = items.length*gap + 6; let paths = "";
-    items.forEach((e, i) => { const on = !!log.done[e.id], y = 8 + i*gap;
-      paths += '<path d="'+(on ? wave(6, 314, y, 0, 0) : wave(6, 314, y, 3.4, i*1.7))+'" class="'+(on ? "fx-on" : "fx-off")+(on && e.id === lastDoneId ? " fx-new" : "")+'" stroke-width="'+(on ? 4 : 2.5)+'"/>'; });
-    bundle = '<div class="bundle"><svg viewBox="0 0 320 '+H+'" role="img" aria-label="'+done+' de '+items.length+' fibras alineadas hoy">'+paths+'</svg><p>'+(left === 0 ? "Todas tus fibras de hoy están alineadas." : done ? done+" de "+items.length+" fibras alineadas hoy." : "Cada ejercicio que hagas alinea una fibra.")+'</p></div>';
+    const celebrate = celebratePending && !sheetOpen && left === 0; let sheens = "";
+    items.forEach((e, i) => { const on = !!log.done[e.id], y = 8 + i*gap, dOn = wave(6, 314, y, 0, i*1.7), dOff = wave(6, 314, y, 3.4, i*1.7);
+      const m = morphSet.has(e.id) && !sheetOpen, to = on ? dOn : dOff, cls = on ? "fx-on" : "fx-off", sw = on ? 4 : 2.5;
+      paths += '<path d="'+(m ? (on ? dOff : dOn) : to)+'"'+(m ? ' data-to="'+to+'" data-cls="'+cls+'" data-sw="'+sw+'"' : '')+' class="'+(m ? (on ? "fx-off" : "fx-on") : cls)+'" stroke-width="'+(m ? (on ? 2.5 : 4) : sw)+'" style="--i:'+i+'"/>';
+      if (celebrate) sheens += '<path class="sheen" pathLength="1" d="'+dOn+'" style="--i:'+i+'"/>'; });
+    if (!sheetOpen){ morphSet.clear(); weekMorph = false; if (celebrate || left !== 0) celebratePending = false; }
+    bundle = '<div class="bundle'+(celebrate ? " celebrate" : "")+'"><svg viewBox="0 0 320 '+H+'" role="img" aria-label="'+done+' de '+items.length+' fibras alineadas hoy">'+paths+sheens+'</svg><p>'+(left === 0 ? "Todas tus fibras de hoy están alineadas." : done ? done+" de "+items.length+" fibras alineadas hoy." : "Cada ejercicio que hagas alinea una fibra.")+'</p></div>';
   }
   lastDoneId = null;
+  if (!sheetOpen){ morphSet.clear(); weekMorph = false; }
   const wc = weekCount(mon);
   const goalTxt = wc >= state.weeklyGoal ? "Meta de la semana cumplida: " + wc + " de " + state.weeklyGoal + " días." : "Llevas " + wc + " de " + state.weeklyGoal + " días esta semana.";
 
@@ -1071,7 +1155,7 @@ function viewHoy(pop){
   if (!items.length) list = '<div class="empty"><p style="margin-top:0">Esta sesión no tiene ejercicios todavía.</p><button class="btn" data-go="rutina">Editar rutina</button></div>';
   if (items.length) items.forEach((e, i) => {
     const on = !!log.done[e.id];
-    list += '<div class="ex'+(on?" on":"")+'"><button class="exmain" data-toggle="'+e.id+'" aria-pressed="'+on+'"><span class="ck" aria-hidden="true"></span><span><span class="nm">'+(i+1)+'. '+esc(e.name)+'</span>'+
+    list += '<div class="ex'+(on?" on":"")+(on && morphSet.has(e.id) && !sheetOpen ? " juston" : "")+'"><button class="exmain" data-toggle="'+e.id+'" aria-pressed="'+on+'"><span class="ck" aria-hidden="true"></span><span><span class="nm">'+(i+1)+'. '+esc(e.name)+'</span>'+
       (rx(e) ? '<span class="rx">'+esc(rx(e))+'</span>' : '') + '</span></button>'+
       '<button class="thumb" data-detail="'+e.id+'" aria-label="Ver cómo se hace: '+esc(e.name)+'">'+thumbInner(e)+'</button></div>';
   });
@@ -1086,7 +1170,7 @@ function viewHoy(pop){
     (sess && items.length ? '<p class="sessmeta">Unos '+sessMin(sess)+' minutos más '+WARM_MIN+' de calentamiento, '+items.length+' ejercicios.</p>' : '')+
     (state.sessions.length > 1 ? '<div class="chips" aria-label="Cambiar sesión">'+chips+'</div>' : '')+
     list+'<p class="small muted">Toca el dibujo para ver el movimiento.'+(pending ? ' Rutina sugerida a partir de protocolos comunes para epicondilitis: confírmala con Santiago.' : '')+'</p></section>'+
-    '<section><h2>Registro del día</h2>'+(log.savedAt && !draftDirty() && !regOpen
+    '<section'+(regAnim ? ' class="regin"' : '')+'><h2>Registro del día</h2>'+(log.savedAt && !draftDirty() && !regOpen
       ? '<div class="pain regmini"><div><b>'+esc(logSummary(log) || "Sin datos")+'</b><span class="small muted">'+saveStatus()+'</span></div><button class="btn ghost sm" data-regopen>Editar</button></div>'
       : regForm(getDraft(), "p", saveStatus(), draftDirty(), "Guardar registro"))+alert+'</section>';
 }
@@ -1249,7 +1333,7 @@ function chartSvg(){
     if (cur.length) segs.push(cur);
     let out = "";
     for (const sg of segs){
-      if (sg.length > 1){ out += '<polyline points="'+sg.map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")+'" style="fill:none;stroke:var('+color+')" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"'+(dash ? ' stroke-dasharray="6 5"' : '')+'/>'; continue; }
+      if (sg.length > 1){ out += '<polyline class="pl" points="'+sg.map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")+'" style="fill:none;stroke:var('+color+')" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"'+(dash ? ' stroke-dasharray="6 5"' : '')+'/>'; continue; }
       for (const [cx, cy] of sg) marks += shape === "sq" ? '<rect x="'+(cx-4).toFixed(1)+'" y="'+(cy-4).toFixed(1)+'" width="8" height="8" rx="1.5" style="fill:var('+color+');stroke:var(--surface)" stroke-width="1.5"/>' : '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="4" style="fill:var('+color+');stroke:var(--surface)" stroke-width="1.5"/>';
     }
     const lastI = data.map(d => d[f]).reduce((a, v, i) => v === null ? a : i, -1);
@@ -1267,12 +1351,13 @@ function chartSvg(){
   const xl = i => parseKey(data[i].k).toLocaleDateString("es-CO", {day:"numeric", month:"short"}).replace(".", "");
   const bBase = B_TOP + B_H, bw = Math.max(3, (x1 - x0)/(PAIN_N - 1) - 3);
   let bars = '<text x="'+x0+'" y="'+(B_TOP-5)+'" class="tx">Sesión hecha</text><line x1="'+x0+'" x2="'+x1+'" y1="'+bBase+'" y2="'+bBase+'" style="stroke:var(--line)"/>';
-  data.forEach((d, i) => { if (d.frac > 0){ const h = Math.max(3, d.frac*B_H); bars += '<rect x="'+(X(i)-bw/2).toFixed(1)+'" y="'+(bBase-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" style="fill:var(--body)" opacity="'+(d.full ? .85 : .4)+'"/>'; } });
+  data.forEach((d, i) => { if (d.frac > 0){ const h = Math.max(3, d.frac*B_H); bars += '<rect class="sbar" x="'+(X(i)-bw/2).toFixed(1)+'" y="'+(bBase-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" style="fill:var(--body)" opacity="'+(d.full ? .85 : .4)+'"/>'; } });
   const xlab = '<text x="'+x0+'" y="'+(bBase+14)+'" class="tx">'+xl(0)+'</text><text x="'+X(14)+'" y="'+(bBase+14)+'" class="tx" text-anchor="middle">'+xl(14)+'</text><text x="'+x1+'" y="'+(bBase+14)+'" class="tx" text-anchor="end">hoy</text>';
   let hits = "";
   data.forEach((d, i) => { const w = (x1 - x0)/(PAIN_N - 1); hits += '<rect data-pday="'+i+'" x="'+(X(i) - w/2).toFixed(1)+'" y="'+top+'" width="'+w.toFixed(1)+'" height="'+(bBase - top)+'" style="fill:transparent;cursor:pointer"/>'; });
   return '<svg viewBox="0 0 '+W+' '+(bBase+20)+'" role="img" aria-label="Dolor de 0 a 10 y sesión hecha, últimos 28 días">'+grid+bars+xlab+
-    '<line id="pday-line" x1="0" x2="0" y1="'+top+'" y2="'+bBase+'" style="stroke:var(--muted)" stroke-width="1" visibility="hidden"/>'+lines+labels+'<g id="pday-dots"></g>'+hits+'</svg>';
+    '<line id="pday-line" x1="0" x2="0" y1="'+top+'" y2="'+bBase+'" style="stroke:var(--muted)" stroke-width="1" visibility="hidden"/>'+
+    '<clipPath id="reveal"><rect class="revealr" x="0" y="0" width="'+W+'" height="'+(base+6)+'"/></clipPath><g clip-path="url(#reveal)">'+lines+'</g>'+labels+'<g id="pday-dots"></g>'+hits+'</svg>';
 }
 function painDayText(i){
   const d = painSeries()[i], name = parseKey(d.k).toLocaleDateString("es-CO", {weekday:"short", day:"numeric", month:"short"}).replace(/\./g, "");
@@ -1405,10 +1490,25 @@ function viewRutina(){
     '<div class="stepper"><button data-rest="-15" aria-label="Menos descanso">−</button><b>'+state.restSec+'</b><button data-rest="15" aria-label="Más descanso">+</button><span class="muted">segundos</span></div>';
 }
 
-function render(pop){
-  $("#view").innerHTML = tab === "hoy" ? viewHoy(pop) : tab === "progreso" ? viewProgreso() : viewRutina();
-  hydrateMedia($("#view"));
+const TABS = ["hoy", "progreso", "rutina"];
+let viewEnter = false, enterT = 0;
+function goTab(t){
+  if (t === tab){ window.scrollTo({top: 0, behavior: reduceMotion() ? "auto" : "smooth"}); return; }
+  const dir = TABS.indexOf(t) > TABS.indexOf(tab) ? "fwd" : "back";
+  const run = () => { tab = t; viewEnter = true; render(); window.scrollTo(0, 0); syncNav(); };
+  const btn = document.querySelector('.tabs button[data-tab="'+t+'"]');
+  if (btn){ btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop"); }
+  if (document.startViewTransition && !reduceMotion()){ document.documentElement.dataset.vt = dir; try { document.startViewTransition(run); } catch(e){ run(); } }
+  else run();
+}
+function render(){
+  const v = $("#view");
+  v.innerHTML = tab === "hoy" ? viewHoy() : tab === "progreso" ? viewProgreso() : viewRutina();
+  hydrateMedia(v);
+  if (viewEnter){ viewEnter = false; v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); clearTimeout(enterT); enterT = setTimeout(() => v.classList.remove("enter"), 1400); }
+  const bar = document.querySelector(".tabs div"); if (bar) bar.style.setProperty("--ti", TABS.indexOf(tab));
   document.querySelectorAll(".tabs button").forEach(b => { if (b.dataset.tab === tab) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  applyMorphs();
 }
 
 /* ---------- animation ---------- */
@@ -1435,29 +1535,67 @@ function startAnim(artId){
 
 /* ---------- sheets ---------- */
 let detailId = null, draft = null;
+let sheetOpen = false, sheetHideT = 0, sheetClosedAt = 0;
 function openSheet(html, focusSel){
-  $("#sheet").innerHTML = html; $("#scrim").hidden = false; syncNav();
-  const f = focusSel ? $("#sheet").querySelector(focusSel) : $("#sheet").querySelector("input:not([type=file]),select,textarea");
-  if (f) f.focus();
+  const sc = $("#scrim"), sh = $("#sheet"), was = sheetOpen && sc.classList.contains("open");
+  const oldH = was && sh.querySelector("h3") ? sh.querySelector("h3").textContent : null, oldTop = sh.scrollTop;
+  clearTimeout(sheetHideT);
+  sh.innerHTML = '<div class="grab" aria-hidden="true"></div>' + html;
+  sheetOpen = true; sc.hidden = false;
+  const same = was && oldH !== null && sh.querySelector("h3") && sh.querySelector("h3").textContent === oldH;
+  if (same){ sh.classList.remove("swap"); sh.scrollTop = oldTop; }
+  else if (was){ sh.classList.remove("swap"); void sh.offsetWidth; sh.classList.add("swap"); sh.scrollTop = 0; }
+  else { sh.classList.remove("swap"); sh.style.transform = ""; void sc.offsetWidth; sc.classList.add("open"); }
+  syncNav();
+  const f = focusSel ? sh.querySelector(focusSel) : sh.querySelector("input:not([type=file]),select,textarea");
+  if (f) try { f.focus({preventScroll: true}); } catch(e){ f.focus(); }
 }
-function closeSheet(){ stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; guideFrom = null; $("#scrim").hidden = true; $("#sheet").innerHTML = ""; render(); syncNav(); }
+function closeSheet(){
+  stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; guideFrom = null;
+  const sc = $("#scrim"), sh = $("#sheet"), wasOpen = sheetOpen;
+  sheetOpen = false; sc.classList.remove("open"); sheetClosedAt = wasOpen ? Date.now() : 0;
+  clearTimeout(sheetHideT);
+  sheetHideT = setTimeout(() => { if (!sheetOpen){ sc.hidden = true; sh.innerHTML = ""; sh.style.transform = ""; } }, reduceMotion() ? 0 : 320);
+  render(); syncNav();
+}
+/* deslizar la hoja hacia abajo para cerrarla */
+(() => {
+  const sh = $("#sheet"), sc = $("#scrim"); let y0 = null, dy = 0, t0 = 0;
+  sh.addEventListener("touchstart", ev => {
+    y0 = null; if (!sheetOpen || ev.touches.length > 1 || sh.scrollTop > 0) return;
+    if (ev.target.closest && ev.target.closest('input[type=range], textarea, .stage, .chart')) return;
+    y0 = ev.touches[0].clientY; dy = 0; t0 = Date.now();
+  }, {passive: true});
+  sh.addEventListener("touchmove", ev => {
+    if (y0 === null) return;
+    dy = ev.touches[0].clientY - y0;
+    if (dy <= 0 || sh.scrollTop > 0){ sc.classList.remove("drag"); sh.style.transform = ""; if (sh.scrollTop > 0) y0 = null; return; }
+    sc.classList.add("drag"); sh.style.transform = "translateY(" + Math.round(dy) + "px)";
+  }, {passive: true});
+  sh.addEventListener("touchend", () => {
+    if (y0 === null) return;
+    const close = dy > 120 || (dy > 50 && Date.now() - t0 < 260);
+    sc.classList.remove("drag"); sh.style.transform = ""; y0 = null; dy = 0;
+    if (close) closeSheet();
+  });
+})();
 
 /* back button: one history entry guards any open sheet or tab other than Hoy */
 let guarded = false, expectPop = false, formFrom = null;
 function syncNav(){
-  const nonRoot = !$("#scrim").hidden || tab !== "hoy";
+  const nonRoot = sheetOpen || tab !== "hoy";
   if (nonRoot && !guarded){ try { history.pushState({fibra: 1}, ""); guarded = true; } catch(e){} }
   else if (!nonRoot && guarded){ guarded = false; expectPop = true; try { history.back(); } catch(e){ expectPop = false; } }
 }
 window.addEventListener("popstate", () => {
   if (expectPop){ expectPop = false; return; }
   guarded = false;
-  if (!$("#scrim").hidden){
+  if (sheetOpen){
     if (backTo){ draft = backTo.draft; backTo = null; drawSession(); }
     else if (formFrom){ const id = formFrom; formFrom = null; openDetail(id); }
     else if (guideFrom){ const g = guideFrom; guideFrom = null; editDaySheet(g.key, g); }
     else closeSheet();
-  } else if (tab !== "hoy"){ tab = "hoy"; render(); window.scrollTo(0,0); }
+  } else if (tab !== "hoy"){ goTab("hoy"); }
   syncNav();
 });
 
@@ -1500,7 +1638,7 @@ function openDetail(id){ if (!tmr || tmr.id !== id) stopTimer(); draft = null; d
 
 let backTo = null;
 function exerciseForm(id, fromSess){
-  formFrom = (!fromSess && detailId && !$("#scrim").hidden) ? detailId : null;
+  formFrom = (!fromSess && detailId && sheetOpen) ? detailId : null;
   stopAnim(); detailId = null; if (!fromSess) backTo = null;
   const isNew = !id, e = exById(id) || {zone:"Antebrazo", unit:"reps", confirmed:false, art:""};
   const zones = ZONES.map(z => '<option'+(z===e.zone?" selected":"")+'>'+z+'</option>').join("");
@@ -1682,7 +1820,7 @@ async function handleFile(file, exId){
     if (!e){ try { await sb.storage.from("media").remove([path]); } catch(x){} return; }
     e.media = e.media || []; e.media.push({id: r.id, kind, d: key(new Date())}); save();
     toast(kind === "video" ? "Video guardado" : "Foto guardada");
-    if (detailId === exId && !$("#scrim").hidden) drawDetail();
+    if (detailId === exId && sheetOpen) drawDetail();
   } catch(err){ say(mediaError(err), true); if (btn) btn.disabled = false; }
 }
 
@@ -1710,8 +1848,8 @@ document.addEventListener("click", ev => {
   const t = ev.target.closest("button");
   if (!t){ if (ev.target === $("#scrim")) closeSheet(); return; }
   const d = t.dataset;
-  if (d.tab){ tab = d.tab; render(); window.scrollTo(0,0); syncNav(); return; }
-  if (d.go){ tab = d.go; if (!$("#scrim").hidden) closeSheet(); render(); window.scrollTo(0,0); syncNav(); return; }
+  if (d.tab){ goTab(d.tab); return; }
+  if (d.go){ if (sheetOpen) closeSheet(); goTab(d.go); return; }
   if (d.pick){ const log = ensureLog(key(new Date())); log.session = d.pick; save(); render(); return; }
   if (d.med){ const dr = drOf(t); dr[d.med] = !dr[d.med]; t.classList.toggle("on", dr[d.med]); t.setAttribute("aria-pressed", String(dr[d.med])); touched(t); return; }
   if (d.breaks){ const dr = drOf(t), v = Number(d.breaks); dr.breaks = dr.breaks === v ? undefined : v;
@@ -1719,7 +1857,7 @@ document.addEventListener("click", ev => {
   if (d.savelog !== undefined){ if (inSheet(t) && editDay) commitEdit(); else commitDraft(); return; }
   if (d.editday){ editDaySheet(d.editday); return; }
   if (d.painguide !== undefined){ painGuide(); return; }
-  if (d.regopen !== undefined){ regOpen = true; render(); const f = $("#p-painL"); if (f) f.closest("section").scrollIntoView({block:"start"}); return; }
+  if (d.regopen !== undefined){ regOpen = true; regAnim = true; render(); regAnim = false; const f = $("#p-painL"); if (f) f.closest("section").scrollIntoView({block:"start"}); return; }
   if (d.guideback !== undefined){ const g = guideFrom; guideFrom = null; if (g) editDaySheet(g.key, g); else closeSheet(); return; }
   if (d.morehist !== undefined){ histDays += 14; render(); return; }
   if (d.clearday){
@@ -1732,19 +1870,19 @@ document.addEventListener("click", ev => {
   if (d.toggle !== undefined){
     const wasDone = todayPlan().done(d.toggle); if (!wasDone) lastDoneId = d.toggle;
     const r = setDone(d.toggle, !wasDone);
-    render(r.pop); if (r.msg) toast(r.msg);
+    render(); if (r.msg) toast(r.msg);
     return;
   }
   if (d.done){
     stopTimer(); lastDoneId = d.done; startNote = false;
     const r = setDone(d.done, true), nx = nextUndone(d.done);
     if (nx){ openDetail(nx); toast(r.msg || "Hecho. +10"); }
-    else { closeSheet(); render(r.pop); toast(r.msg || "Hecho. +10"); window.scrollTo(0,0); }
+    else { closeSheet(); toast(r.msg || "Hecho. +10"); window.scrollTo(0,0); }
     return;
   }
   if (d.undone){ const lg = ensureLog(key(new Date())); if (lg.sets) lg.sets[d.undone] = 0; if (lg.reps) delete lg.reps[d.undone]; setDone(d.undone, false); drawFlow(); return; }
   if (d.setdone){ unlockAudio(); completeSet(d.setdone); return; }
-  if (d.rep){ const e = exById(detailId); if (e){ repN = Math.max(0, Math.min((e.reps || 0) + 20, (repN || 0) + Number(d.rep))); drawFlow(); } return; }
+  if (d.rep){ const e = exById(detailId); if (e){ repN = Math.max(0, Math.min((e.reps || 0) + 20, (repN || 0) + Number(d.rep))); repBump = true; drawFlow(); } return; }
   if (d.early !== undefined){ if (tmr && tmr.kind === "work"){ const id = tmr.id, el = Math.max(1, Math.round((Date.now() - (tmr.endsAt - tmr.total*1000))/1000)); stopTimer(); completeSet(id, Math.min(el, tmr ? tmr.total : el)); } return; }
   if (d.loadedit !== undefined){ loadEdit = true; drawFlow(); const i = $("#load-in"); if (i){ i.focus(); i.select(); } return; }
   if (d.loadsave !== undefined){ const e = exById(detailId), v = ($("#load-in").value || "").trim(); loadEdit = false;
@@ -1817,7 +1955,7 @@ document.addEventListener("click", ev => {
   if (d.login !== undefined){ loginSheet(); return; }
   if (d.signin !== undefined){ doAuth("in"); return; }
   if (d.signup !== undefined){ doAuth("up"); return; }
-  if (d.syncnow !== undefined){ (dirty ? push() : pull()).then(() => { if ($("#scrim").hidden === false && !detailId) accountSheet(); }); return; }
+  if (d.syncnow !== undefined){ (dirty ? push() : pull()).then(() => { if (sheetOpen && !detailId) accountSheet(); }); return; }
   if (d.signout !== undefined){
     if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez para cerrar sesión"; return; }
     if (sb) sb.auth.signOut().catch(() => {}); session = null; setSync("nologin"); closeSheet(); toast("Sesión cerrada"); return;
@@ -1859,7 +1997,7 @@ document.addEventListener("change", ev => {
   if (tg.id === "bfile" && tg.files && tg.files[0]){ readBackup(tg.files[0]); return; }
 });
 document.addEventListener("keydown", ev => {
-  if (ev.key === "Escape" && !$("#scrim").hidden) closeSheet();
+  if (ev.key === "Escape" && sheetOpen) closeSheet();
   if (ev.key === "Enter" && ev.target && ev.target.id === "l-pass"){ ev.preventDefault(); doAuth("in"); }
   if (ev.key === "Enter" && ev.target && ev.target.id === "load-in"){ ev.preventDefault(); const b = $("[data-loadsave]"); if (b) b.click(); }
 });
