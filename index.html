@@ -83,6 +83,7 @@ button{cursor:pointer}
 .hrow span{font-size:12px;color:var(--muted)}
 .hrow i{display:block;height:14px;border-radius:3px;background:var(--line);opacity:.6}
 .hrow i.on{background:var(--accent);opacity:1}
+.hrow i.na{background:transparent;border:1px dashed var(--muted);opacity:.6}
 .hrow i.l1{background:var(--accent);opacity:.2}.hrow i.l2{background:var(--accent);opacity:.4}.hrow i.l3{background:var(--accent);opacity:.6}.hrow i.l4{background:var(--accent);opacity:.8}.hrow i.l5{background:var(--accent);opacity:1}
 .fund{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--fiber);border-radius:14px;padding:14px}
 .fundtop{display:flex;align-items:baseline;gap:8px}
@@ -117,6 +118,14 @@ button{cursor:pointer}
 .chkrow.on span:last-child{color:var(--muted);text-decoration:line-through}
 .warm{margin:0;padding-left:22px}
 .warm li{margin:0 0 8px;font-size:15px}
+.repctl{display:flex;align-items:center;gap:12px;margin:4px 0 10px}
+.repctl button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:22px}
+.repctl b{font-family:var(--display);font-size:40px;font-weight:800;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.repctl span{color:var(--muted);font-size:15px;flex:1;text-align:right}
+.loadline{margin:0 0 4px}
+.lastline{margin:0 0 8px}
+.loadedit{display:flex;gap:8px;margin:0 0 8px}
+.loadedit input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--surface)}
 .days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .dayrow b{display:block;font-size:15px}
@@ -728,7 +737,7 @@ function dayStats(k){
   const total = sess ? sess.items.length : ((log && log.total) || 0);
   const full = total > 0 && done >= total, counts = done > 0 && done >= Math.ceil(total/2);
   const pains = log ? [log.painL, log.painR].filter(v => typeof v === "number") : [];
-  return {done, total, full, counts, pain: pains.length ? Math.max(...pains) : null, logged: pains.length > 0 || !!(log && (log.note || log.ice || log.heat || log.breaks))};
+  return {done, total, full, counts, pain: pains.length ? Math.max(...pains) : null, logged: pains.length > 0 || !!(log && (log.note || log.ice || log.heat || typeof log.breaks === "number"))};
 }
 function sessionFor(tk){
   const log = state.logs[tk];
@@ -816,6 +825,7 @@ function loadNudge(e){
   for (let i = 1; i <= 14; i++){
     const k = key(addDays(today,-i)), l = state.logs[k]; if (!l) continue;
     if (l.done && l.done[e.id]) doneDays++;
+    if (e.reps && l.reps && l.reps[e.id] && l.reps[e.id].some(v => typeof v === "number" && v < e.reps)) return false;
     const st = dayStats(k); if (st.pain !== null) pains.push(st.pain);
   }
   if (doneDays < 4 || pains.length < 4) return false;
@@ -859,10 +869,27 @@ function tickTimer(){
 }
 function setsDone(id){ const l = state.logs[key(new Date())]; return (l && l.sets && l.sets[id]) || 0; }
 const steps = e => Math.max(1, (e.sets || 1) * (e.perArm ? 2 : 1));
-function completeSet(id){
+let repN = null, repKey = "", loadEdit = false;
+function fmtReps(e, arr){
+  if (!arr || !arr.length) return "";
+  const v = arr.map(x => x === null || x === undefined ? "–" : x);
+  if (!e.perArm) return v.join(" · ");
+  const out = []; for (let i = 0; i < v.length; i += 2) out.push(v[i] + (i+1 < v.length ? "/" + v[i+1] : "")); return out.join(" · ");
+}
+function lastTime(e){
+  const tk = key(new Date()), ks = Object.keys(state.logs).filter(k => k < tk).sort().reverse();
+  for (const k of ks){ const l = state.logs[k]; if (l && ((l.reps && l.reps[e.id] && l.reps[e.id].length) || (l.loads && l.loads[e.id]))) return {k, reps: (l.reps && l.reps[e.id]) || [], load: (l.loads && l.loads[e.id]) || ""}; }
+  return null;
+}
+function completeSet(id, val){
   const e = exById(id); if (!e) return;
   const log = ensureLog(key(new Date())); log.sets = log.sets || {};
-  const total = steps(e), n = log.sets[id] = Math.min((log.sets[id] || 0) + 1, total); save();
+  const total = steps(e), n = log.sets[id] = Math.min((log.sets[id] || 0) + 1, total);
+  const got = val !== undefined ? val : (repN !== null && repKey === id + ":" + (n-1) ? repN : e.reps);
+  if (e.reps){ log.reps = log.reps || {}; const arr = log.reps[id] = log.reps[id] || []; arr[n-1] = got; }
+  if (e.load){ log.loads = log.loads || {}; if (!log.loads[id]) log.loads[id] = e.load; }
+  repN = null; repKey = "";
+  save();
   if (n >= total){ stopTimer(); lastDoneId = id; const r = setDone(id, true); drawFlow(); toast(r.msg || "Ejercicio completo. +10"); return; }
   if (e.perArm && n % 2 === 1){ stopTimer(); drawFlow(); toast("Ahora el brazo izquierdo"); return; }
   const rest = state.restSec || 60;
@@ -877,8 +904,15 @@ function drawFlow(){
   const run = tmr && tmr.id === e.id ? tmr : null;
   if (startNote && (setsDone(e.id) > 0 || isDone)) startNote = false;
   let h = (startNote ? '<p class="pill play">'+esc(bundleMsg())+'</p>' : '')+'<p class="small muted">Ejercicio '+(idx+1)+' de '+pl.items.length+' de hoy</p>';
+  const todayLog = state.logs[key(new Date())] || {}, todayReps = todayLog.reps && todayLog.reps[e.id], lt = lastTime(e);
+  const unitTxt = e.unit === "seg" ? "segundos" : "repeticiones";
+  const loadLine = loadEdit ? '<div class="loadedit"><input type="text" id="load-in" value="'+esc(e.load || "")+'" placeholder="Ej: mancuerna sin discos, 2 kg" aria-label="Carga"><button class="btn sm" data-loadsave>Guardar</button></div>'
+    : '<p class="small loadline">Carga: <b>'+esc(e.load || "sin definir")+'</b> <button class="linkish" data-loadedit>Cambiar</button></p>';
+  const lastLine = lt ? '<p class="small muted lastline">La última vez ('+esc(fmtShort(lt.k))+'): '+(lt.load ? esc(lt.load)+'. ' : '')+(lt.reps.length ? esc(fmtReps(e, lt.reps))+' '+(e.perArm ? '(der/izq)' : '') : '')+'</p>' : '';
   if (isDone){
-    h += '<p class="phase" style="min-height:0;margin-bottom:10px">Ejercicio completo</p><div class="row">'+
+    h += '<p class="phase" style="min-height:0;margin-bottom:6px">Ejercicio completo</p>'+
+      (todayReps && todayReps.length ? '<p class="small" style="margin:0 0 10px">Hoy: '+esc(fmtReps(e, todayReps))+(e.perArm ? ' (der/izq)' : '')+' '+unitTxt+(todayLog.loads && todayLog.loads[e.id] ? ', con '+esc(todayLog.loads[e.id]) : '')+'.</p>' : '')+
+      '<div class="row">'+
       (nx ? '<button class="btn" data-next>Siguiente ejercicio</button>' : '<button class="btn" data-close>Terminar</button>')+
       '<button class="btn ghost" data-undone="'+e.id+'">Desmarcar</button></div>';
   } else if (total > 0){
@@ -887,15 +921,18 @@ function drawFlow(){
     let dots = '';
     if (e.perArm) for (let i = 0; i < total; i++) dots += '<span class="pair"><i class="'+(2*i < sdn ? 'on' : '')+'"></i><i class="'+(2*i+1 < sdn ? 'on' : '')+'"></i></span>';
     else for (let i = 0; i < total; i++) dots += '<i class="'+(i < sdn ? 'on' : '')+'"></i>';
-    h += '<div class="sets"><div class="dots" aria-hidden="true">'+dots+'</div><span>'+(run && run.kind === "rest" ? "Después: serie " : "Serie ")+setNo+' de '+total+(arm ? ', '+arm : '')+'</span></div>';
+    h += '<div class="sets"><div class="dots" aria-hidden="true">'+dots+'</div><span>'+(run && run.kind === "rest" ? "Después: serie " : "Serie ")+setNo+' de '+total+(arm ? ', '+arm : '')+'</span></div>'+loadLine+lastLine;
     if (run){
       h += '<div class="tmr"><b id="tmr-num">'+fmtSec(Math.max(0, Math.ceil((run.endsAt - Date.now())/1000)))+'</b><span>'+(run.kind === "rest" ? "Descanso" : "Sostén")+'</span></div>'+
         '<svg class="tstrand" viewBox="0 0 320 24" preserveAspectRatio="none" aria-hidden="true"><path id="tmr-path" class="'+(run.kind === "rest" ? "fx-amb" : "fx-on")+'" stroke-width="3" d="'+wave(4, 316, 12, 8, 0)+'"/></svg>'+
-        '<div class="row">'+(run.kind === "rest" ? '<button class="btn" data-skiprest>Saltar descanso</button>' : '<button class="btn ghost" data-stoptmr>Parar</button>')+'</div>';
+        '<div class="row">'+(run.kind === "rest" ? '<button class="btn" data-skiprest>Saltar descanso</button>' : '<button class="btn ghost" data-early>Terminé antes</button><button class="btn ghost" data-stoptmr>Cancelar</button>')+'</div>';
     } else if (e.unit === "seg" && e.reps){
       h += '<div class="row"><button class="btn" data-work="'+e.id+'">'+(arm ? arm.charAt(0).toUpperCase() + arm.slice(1) + ": " : (sdn ? "Siguiente serie: " : "Empezar: "))+e.reps+' segundos</button></div>';
     } else {
-      h += (e.reps ? '<div class="tmr"><b>'+e.reps+'</b><span>repeticiones'+(arm ? ', '+arm : '')+'</span></div>' : '')+'<div class="row"><button class="btn" data-setdone="'+e.id+'">'+(arm ? "Listo el "+arm : "Serie hecha")+'</button></div>';
+      const rk = e.id + ":" + sdn; if (repKey !== rk){ repKey = rk; repN = e.reps || null; }
+      h += (e.reps ? '<div class="repctl"><button data-rep="-1" aria-label="Una repetición menos">−</button><b id="rep-n">'+repN+'</b><button data-rep="1" aria-label="Una repetición más">+</button><span>'+(repN < e.reps ? 'de '+e.reps+' repeticiones' : 'repeticiones')+(arm ? ', '+arm : '')+'</span></div>'+
+        '<p class="small muted" style="margin:-4px 0 10px">Si no completaste las '+e.reps+', bájalo antes de marcar.</p>' : '')+
+        '<div class="row"><button class="btn" data-setdone="'+e.id+'">'+(arm ? "Listo el "+arm : "Serie hecha")+'</button></div>';
     }
     h += '<div class="row" style="margin-top:6px"><button class="icon-btn" data-done="'+e.id+'">Marcar todo hecho'+(nx ? ' y seguir' : '')+'</button></div>';
   } else {
@@ -1124,11 +1161,12 @@ function regForm(dr, px, status, dirty, saveLbl){
       '<p class="anchor" id="'+px+'-a-'+field+'">'+esc(painTxt(v))+'</p></div>';
   };
   const brk = BRK.map((t,i) => '<button class="seg'+(dr.breaks === i+1 ? " on" : "")+'" data-breaks="'+(i+1)+'" aria-pressed="'+(dr.breaks === i+1)+'">'+t+'</button>').join("");
+  const na = '<div class="toggles" style="margin-top:8px"><button class="tog'+(dr.breaks === 0 ? " on" : "")+'" data-breaks="0" aria-pressed="'+(dr.breaks === 0)+'">No aplica hoy</button><span class="small muted" style="align-self:center">Para días que no trabajaste</span></div>';
   return '<div class="pain"><p class="small muted hint">Puntúa cómo estuvo cada brazo en el día, en general. <button class="linkish" data-painguide>Ver guía del 0 al 10</button></p>'+pr("painL","Dolor brazo izquierdo")+pr("painR","Dolor brazo derecho")+
     '<div class="pr"><span class="lbl">Medios físicos</span><div class="toggles">'+
       '<button class="tog'+(dr.ice ? " on" : "")+'" data-med="ice" aria-pressed="'+!!dr.ice+'">Hielo</button>'+
       '<button class="tog'+(dr.heat ? " on" : "")+'" data-med="heat" aria-pressed="'+!!dr.heat+'">Calor</button></div></div>'+
-    '<div class="pr"><span class="lbl">Pausas activas: ¿qué tan juicioso fuiste?</span><div class="segs" role="group" aria-label="Pausas activas">'+brk+'</div></div>'+
+    '<div class="pr"><span class="lbl">Pausas activas: ¿qué tan juicioso fuiste?</span><div class="segs" role="group" aria-label="Pausas activas">'+brk+'</div>'+na+'</div>'+
     '<div class="pr"><label for="'+px+'-note">Notas</label><textarea id="'+px+'-note" class="note" data-note placeholder="Ej: mucho teclado, dormí mal, molestia al cargar el mercado">'+esc(dr.note||"")+'</textarea></div>'+
     '<div class="savebar"><span id="'+ids.st+'" class="small muted">'+status+'</span><button class="btn" id="'+ids.save+'" data-savelog'+(dirty ? "" : " disabled")+'>'+saveLbl+'</button></div></div>';
 }
@@ -1143,7 +1181,7 @@ function logSummary(l){
   const parts = [];
   if (typeof l.painL === "number" || typeof l.painR === "number") parts.push("Dolor izq. " + (typeof l.painL === "number" ? l.painL : "–") + ", der. " + (typeof l.painR === "number" ? l.painR : "–"));
   if (l.ice) parts.push("hielo"); if (l.heat) parts.push("calor");
-  if (typeof l.breaks === "number") parts.push("pausas: " + BRK[l.breaks-1].toLowerCase());
+  if (typeof l.breaks === "number") parts.push(l.breaks ? "pausas: " + BRK[l.breaks-1].toLowerCase() : "pausas: no aplica");
   if (l.note) parts.push("nota");
   return parts.join(" · ");
 }
@@ -1254,7 +1292,7 @@ function painHtml(){
 function habitStats(days){
   const today = new Date(); let ice = 0, heat = 0, bsum = 0, bn = 0, pl = [], prr = [];
   for (let i = 0; i < days; i++){ const l = state.logs[key(addDays(today, -i))]; if (!l) continue;
-    if (l.ice) ice++; if (l.heat) heat++; if (typeof l.breaks === "number"){ bsum += l.breaks; bn++; }
+    if (l.ice) ice++; if (l.heat) heat++; if (typeof l.breaks === "number" && l.breaks > 0){ bsum += l.breaks; bn++; }
     if (typeof l.painL === "number") pl.push(l.painL); if (typeof l.painR === "number") prr.push(l.painR); }
   const avg = a => a.length ? a.reduce((x,y) => x+y, 0)/a.length : null;
   return {ice, heat, breaks: bn ? bsum/bn : null, painL: avg(pl), painR: avg(prr)};
@@ -1265,7 +1303,7 @@ function habitsHtml(){
   for (let i = N-1; i >= 0; i--){ const k = key(addDays(today, -i)), l = state.logs[k] || {}, st = dayStats(k);
     ses += '<i class="'+(st.full ? "on" : st.counts ? "l3" : st.done ? "l1" : "")+'"></i>';
     ice += '<i class="'+(l.ice ? "on" : "")+'"></i>'; heat += '<i class="'+(l.heat ? "on" : "")+'"></i>';
-    brk += '<i class="'+(typeof l.breaks === "number" ? "l"+l.breaks : "")+'"></i>'; }
+    brk += '<i class="'+(typeof l.breaks === "number" ? (l.breaks ? "l"+l.breaks : "na") : "")+'"></i>'; }
   const h = habitStats(14);
   return '<div class="habits" role="img" aria-label="Hielo, calor y pausas activas de los últimos 28 días">'+
     '<div class="hrow"><span>Hielo</span>'+ice+'</div><div class="hrow"><span>Calor</span>'+heat+'</div><div class="hrow"><span>Pausas</span>'+brk+'</div>'+
@@ -1318,7 +1356,7 @@ function santiagoText(){
   let t = "Hola Santiago, estoy organizando mi rutina en una app con 4 sesiones que voy rotando. Algunos ejercicios son los que me pusiste y otros son sugeridos. ¿Me ayudas a revisar si está bien, qué cambiarías y qué me falta de lo que me mandaste?\n\n";
   state.sessions.forEach((s,i) => {
     t += "Sesión " + letter(i) + " (" + s.name + "):\n";
-    s.items.map(exById).filter(Boolean).forEach(e => { t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.confirmed ? "" : " (por confirmar)") + "\n"; });
+    s.items.map(exById).filter(Boolean).forEach(e => { const lt = lastTime(e); t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.confirmed ? "" : " (por confirmar)") + (lt && lt.reps.length ? ". La última vez hice " + fmtReps(e, lt.reps) + (e.perArm ? " (der/izq)" : "") + (lt.load ? " con " + lt.load : "") : "") + "\n"; });
     t += "\n";
   });
   t += "Para que cada sesión me tome unos 20 minutos, dejé 3 series en el excéntrico o el isométrico de extensores y 2 en los demás. ¿Te parece bien esa dosis o cambiarías algo?\n\nLos adapté a lo que tengo en casa: mancuernas ajustables de 2 a 7 kg, una banda grande, 3 mini bandas y una toalla.\n\nAntes de cada sesión caliento unos 3 minutos: círculos de muñeca, abrir y cerrar las manos, girar los antebrazos sin peso, círculos de hombros y unas repeticiones del primer ejercicio sin peso. ¿Le cambiarías algo?\n\n";
@@ -1348,6 +1386,7 @@ function viewRutina(){
       '<div class="small muted">'+esc(e.zone || "")+(rx(e) ? ", "+esc(rx(e)) : "")+'</div>'+
       '<div class="small muted" style="margin-top:4px">'+(used ? "En sesiones: " + used : "No está en ninguna sesión")+(nMedia ? ". " + nMedia + (nMedia === 1 ? " foto o video" : " fotos o videos") : "")+'</div>'+
       (hist ? '<div class="hist">Carga: '+hist+'</div>' : '') +
+      ((lt => lt && lt.reps.length ? '<div class="hist">Última vez, '+esc(fmtShort(lt.k))+': '+esc(fmtReps(e, lt.reps))+(e.perArm ? ' (der/izq)' : '')+'</div>' : '')(lastTime(e))) +
       (loadNudge(e) ? '<span class="tag go">Listo para subir carga</span> ' : '') +
       (!e.confirmed ? '<span class="tag pend">Por confirmar con Santiago</span>' : '') + '</div></div></div>';
   }
@@ -1457,7 +1496,7 @@ function drawDetail(){
   if (art) startAnim(art);
   drawFlow();
 }
-function openDetail(id){ if (!tmr || tmr.id !== id) stopTimer(); draft = null; detailId = id; drawDetail(); }
+function openDetail(id){ if (!tmr || tmr.id !== id) stopTimer(); draft = null; detailId = id; loadEdit = false; drawDetail(); }
 
 let backTo = null;
 function exerciseForm(id, fromSess){
@@ -1676,7 +1715,7 @@ document.addEventListener("click", ev => {
   if (d.pick){ const log = ensureLog(key(new Date())); log.session = d.pick; save(); render(); return; }
   if (d.med){ const dr = drOf(t); dr[d.med] = !dr[d.med]; t.classList.toggle("on", dr[d.med]); t.setAttribute("aria-pressed", String(dr[d.med])); touched(t); return; }
   if (d.breaks){ const dr = drOf(t), v = Number(d.breaks); dr.breaks = dr.breaks === v ? undefined : v;
-    t.closest(".segs").querySelectorAll("[data-breaks]").forEach(b => { const on = Number(b.dataset.breaks) === dr.breaks; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); }); touched(t); return; }
+    t.closest(".pr").querySelectorAll("[data-breaks]").forEach(b => { const on = Number(b.dataset.breaks) === dr.breaks; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); }); touched(t); return; }
   if (d.savelog !== undefined){ if (inSheet(t) && editDay) commitEdit(); else commitDraft(); return; }
   if (d.editday){ editDaySheet(d.editday); return; }
   if (d.painguide !== undefined){ painGuide(); return; }
@@ -1703,8 +1742,17 @@ document.addEventListener("click", ev => {
     else { closeSheet(); render(r.pop); toast(r.msg || "Hecho. +10"); window.scrollTo(0,0); }
     return;
   }
-  if (d.undone){ const lg = ensureLog(key(new Date())); if (lg.sets) lg.sets[d.undone] = 0; setDone(d.undone, false); drawFlow(); return; }
+  if (d.undone){ const lg = ensureLog(key(new Date())); if (lg.sets) lg.sets[d.undone] = 0; if (lg.reps) delete lg.reps[d.undone]; setDone(d.undone, false); drawFlow(); return; }
   if (d.setdone){ unlockAudio(); completeSet(d.setdone); return; }
+  if (d.rep){ const e = exById(detailId); if (e){ repN = Math.max(0, Math.min((e.reps || 0) + 20, (repN || 0) + Number(d.rep))); drawFlow(); } return; }
+  if (d.early !== undefined){ if (tmr && tmr.kind === "work"){ const id = tmr.id, el = Math.max(1, Math.round((Date.now() - (tmr.endsAt - tmr.total*1000))/1000)); stopTimer(); completeSet(id, Math.min(el, tmr ? tmr.total : el)); } return; }
+  if (d.loadedit !== undefined){ loadEdit = true; drawFlow(); const i = $("#load-in"); if (i){ i.focus(); i.select(); } return; }
+  if (d.loadsave !== undefined){ const e = exById(detailId), v = ($("#load-in").value || "").trim(); loadEdit = false;
+    if (e && v && v !== e.load){ const prev = e.load || ""; e.load = v; e.loadHistory = e.loadHistory || []; const tk = key(new Date()), last = e.loadHistory[e.loadHistory.length-1];
+      if (last && last.d === tk) last.load = v; else e.loadHistory.push({d: tk, load: v});
+      const lg = state.logs[tk]; if (lg && lg.loads && lg.loads[e.id]) lg.loads[e.id] = v;
+      save(); toast(prev ? "Carga: " + prev + " → " + v : "Carga guardada"); const hp = $("#sheet .sh p"); if (hp) hp.textContent = rx(e); }
+    drawFlow(); return; }
   if (d.work){ unlockAudio(); const e = exById(d.work); if (e) startTimer(e.id, "work", e.reps); return; }
   if (d.skiprest !== undefined || d.stoptmr !== undefined){ stopTimer(); drawFlow(); return; }
   if (d.snooze){ const e = exById(d.snooze); if (e){ e.progSnooze = key(addDays(new Date(), 7)); save(); drawDetail(); toast("Te lo recuerdo en una semana"); } return; }
@@ -1813,6 +1861,7 @@ document.addEventListener("change", ev => {
 document.addEventListener("keydown", ev => {
   if (ev.key === "Escape" && !$("#scrim").hidden) closeSheet();
   if (ev.key === "Enter" && ev.target && ev.target.id === "l-pass"){ ev.preventDefault(); doAuth("in"); }
+  if (ev.key === "Enter" && ev.target && ev.target.id === "load-in"){ ev.preventDefault(); const b = $("[data-loadsave]"); if (b) b.click(); }
 });
 
 render();
