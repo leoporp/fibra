@@ -108,6 +108,15 @@ button{cursor:pointer}
 .pill.play{display:block;margin:0 0 10px;background:var(--soft);border-left:3px solid var(--fiber);border-radius:8px;padding:8px 10px;font-weight:700}
 .regmini{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px}
 .regmini b{display:block;font-size:15px;margin-bottom:2px}
+.chklist{display:flex;flex-direction:column;gap:6px}
+.chkrow{display:flex;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;font-size:15px}
+.chkrow .box{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--muted);display:grid;place-items:center}
+.chkrow.on{border-color:var(--accent)}
+.chkrow.on .box{background:var(--accent);border-color:var(--accent)}
+.chkrow.on .box::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.chkrow.on span:last-child{color:var(--muted);text-decoration:line-through}
+.warm{margin:0;padding-left:22px}
+.warm li{margin:0 0 8px;font-size:15px}
 .days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .dayrow b{display:block;font-size:15px}
@@ -1037,7 +1046,7 @@ function viewHoy(pop){
   return '<p class="date">'+esc(fmt)+'</p><h1>'+esc(title)+'</h1>'+bundle+
     '<div class="strands">'+week+'</div><p class="small muted" style="margin:0">'+goalTxt+'</p>'+nextHtml+
     '<section><h2>'+(sess ? esc(sessLabel(sess)+": "+sess.name) : "Sesión")+'</h2>'+
-    (sess && items.length ? '<p class="sessmeta">Unos '+sessMin(sess)+' minutos, '+items.length+' ejercicios.</p>' : '')+
+    (sess && items.length ? '<p class="sessmeta">Unos '+sessMin(sess)+' minutos más '+WARM_MIN+' de calentamiento, '+items.length+' ejercicios.</p>' : '')+
     (state.sessions.length > 1 ? '<div class="chips" aria-label="Cambiar sesión">'+chips+'</div>' : '')+
     list+'<p class="small muted">Toca el dibujo para ver el movimiento.'+(pending ? ' Rutina sugerida a partir de protocolos comunes para epicondilitis: confírmala con Santiago.' : '')+'</p></section>'+
     '<section><h2>Registro del día</h2>'+(log.savedAt && !draftDirty() && !regOpen
@@ -1059,6 +1068,37 @@ const PAIN_TXT = [
   "El peor dolor que te puedas imaginar."];
 const painTxt = v => typeof v === "number" ? PAIN_TXT[v] : "Mueve la barra para registrarlo.";
 let guideFrom = null;
+/* antes de empezar: lo que hay que tener listo y el calentamiento */
+const WARM_MIN = 3;
+const WARMUP = [
+  ["Círculos de muñeca", "Brazos al frente, 10 hacia cada lado, despacio."],
+  ["Abrir y cerrar las manos", "20 veces, abriendo bien los dedos."],
+  ["Girar los antebrazos", "Codos pegados al cuerpo, palmas arriba y abajo, 15 veces. Sin peso."],
+  ["Círculos de hombros", "10 hacia atrás, amplios."],
+  ["Primera serie suave", "Haz unas repeticiones del primer ejercicio sin peso antes de la serie de verdad."]];
+const EXTRA_GEAR = {ecc_ext: "Mesa o tu muslo para apoyar el antebrazo", iso_ext: "Mesa o tu muslo para apoyar el antebrazo", flex: "Mesa o tu muslo para apoyar el antebrazo", row: "Espacio en el piso para sentarte con las piernas estiradas"};
+function gearFor(sess){
+  const out = [], seen = new Set(), add = t => { const k = t.toLowerCase(); if (!seen.has(k)){ seen.add(k); out.push(t); } };
+  for (const e of sess.items.map(exById).filter(Boolean)){
+    let g = (e.load || "").trim();
+    if (/toalla/i.test(g)) g = "Toalla de mano";
+    else if (/mini banda/i.test(g)) g = "Mini banda";
+    if (g && !/otra mano|sin peso|^nada$/i.test(g)) add(g.charAt(0).toUpperCase() + g.slice(1));
+    if (EXTRA_GEAR[e.art]) add(EXTRA_GEAR[e.art]);
+  }
+  add("Audífonos y " + (state.bundle || "tu audiolibro"));
+  return out;
+}
+function preSheet(firstId){
+  const sess = sessionFor(key(new Date())); if (!sess){ openDetail(firstId); return; }
+  const gear = gearFor(sess).map(g => '<button class="chkrow" data-gear aria-pressed="false"><span class="box" aria-hidden="true"></span><span>'+esc(g)+'</span></button>').join("");
+  const warm = WARMUP.map((w, i) => '<li><b>'+esc(w[0])+'.</b> '+esc(w[1])+'</li>').join("");
+  openSheet('<div class="sh"><div><h3>Antes de empezar</h3><p class="muted small" style="margin:4px 0 0">'+esc(sessLabel(sess)+": "+sess.name)+'. Unos '+sessMin(sess)+' minutos más '+WARM_MIN+' de calentamiento.</p></div><button class="btn ghost sm" data-close>Cerrar</button></div>'+
+    '<h4 style="margin-top:4px">Ten listo</h4><div class="chklist">'+gear+'</div>'+
+    '<h4>Calentamiento, unos '+WARM_MIN+' minutos</h4><ol class="warm">'+warm+'</ol>'+
+    '<p class="small muted">Sin peso y sin dolor: es para entrar en calor, no para estirar fuerte.</p>'+
+    '<div class="row" style="margin-top:14px"><button class="btn block" data-gostart="'+firstId+'">Listo, empezar la sesión</button></div>', "[data-close]");
+}
 function painGuide(){
   guideFrom = editDay ? Object.assign({}, editDay) : null;
   const rows = PAIN_TXT.slice(0, 8).map((t, i) => '<div class="gl'+(i >= 1 && i <= 5 ? " key" : "")+'"><b>'+i+'</b><span>'+esc(t)+'</span></div>').join("") +
@@ -1281,7 +1321,7 @@ function santiagoText(){
     s.items.map(exById).filter(Boolean).forEach(e => { t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.confirmed ? "" : " (por confirmar)") + "\n"; });
     t += "\n";
   });
-  t += "Para que cada sesión me tome unos 20 minutos, dejé 3 series en el excéntrico o el isométrico de extensores y 2 en los demás. ¿Te parece bien esa dosis o cambiarías algo?\n\nLos adapté a lo que tengo en casa: mancuernas ajustables de 2 a 7 kg, una banda grande, 3 mini bandas y una toalla.\n\n";
+  t += "Para que cada sesión me tome unos 20 minutos, dejé 3 series en el excéntrico o el isométrico de extensores y 2 en los demás. ¿Te parece bien esa dosis o cambiarías algo?\n\nLos adapté a lo que tengo en casa: mancuernas ajustables de 2 a 7 kg, una banda grande, 3 mini bandas y una toalla.\n\nAntes de cada sesión caliento unos 3 minutos: círculos de muñeca, abrir y cerrar las manos, girar los antebrazos sin peso, círculos de hombros y unas repeticiones del primer ejercicio sin peso. ¿Le cambiarías algo?\n\n";
   const nd = nudged();
   if (nd.length) t += "Estos me han ido bien las últimas 2 semanas, con poco dolor: " + nd.map(e => e.name + (e.load ? " (" + e.load + ")" : "")).join(", ") + ". ¿Les subo la carga? ¿Cuánto?\n\n";
   const hs = habitStats(14);
@@ -1670,7 +1710,9 @@ document.addEventListener("click", ev => {
   if (d.snooze){ const e = exById(d.snooze); if (e){ e.progSnooze = key(addDays(new Date(), 7)); save(); drawDetail(); toast("Te lo recuerdo en una semana"); } return; }
   if (d.rest){ state.restSec = Math.min(180, Math.max(15, (state.restSec || 60) + Number(d.rest))); save(); render(); return; }
   if (d.next !== undefined){ stopTimer(); startNote = false; const nx = nextUndone(detailId); if (nx) openDetail(nx); return; }
-  if (d.detail){ startNote = d.start !== undefined; openDetail(d.detail); return; }
+  if (d.detail){ if (d.start !== undefined && dayStats(key(new Date())).done === 0){ preSheet(d.detail); return; } startNote = d.start !== undefined; openDetail(d.detail); return; }
+  if (d.gostart){ startNote = true; openDetail(d.gostart); return; }
+  if (d.gear !== undefined){ const on = t.getAttribute("aria-pressed") !== "true"; t.setAttribute("aria-pressed", String(on)); t.classList.toggle("on", on); return; }
   if (d.spend !== undefined){ spendForm(); return; }
   if (d.savespend !== undefined){
     const amt = Math.round(Number(($("#sp-amt").value || "").replace(/[^0-9]/g, "")) || 0), what = $("#sp-what").value.trim();
