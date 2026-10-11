@@ -106,6 +106,8 @@ button{cursor:pointer}
 .gl b{flex:none;min-width:2.2em;font-family:var(--display);font-size:18px;color:var(--muted)}
 .gl.key b{color:var(--accent)}
 .pill.play{display:block;margin:0 0 10px;background:var(--soft);border-left:3px solid var(--fiber);border-radius:8px;padding:8px 10px;font-weight:700}
+.regmini{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px}
+.regmini b{display:block;font-size:15px;margin-bottom:2px}
 .days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .dayrow b{display:block;font-size:15px}
@@ -924,7 +926,7 @@ function commitDraft(){
   ["painL","painR","breaks"].forEach(f => { if (typeof d[f] === "number") log[f] = d[f]; else delete log[f]; });
   log.ice = !!d.ice; log.heat = !!d.heat; log.note = (d.note || "").trim(); log.savedAt = Date.now();
   save(); try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
-  draftDay = null; render();
+  draftDay = null; regOpen = false; render();
   toast(!wasLogged && dayStats(d.key).logged ? "Registro guardado. +5" : "Registro guardado");
 }
 let toastT;
@@ -1016,7 +1018,9 @@ function viewHoy(pop){
     (sess && items.length ? '<p class="sessmeta">Unos '+sessMin(sess)+' minutos, '+items.length+' ejercicios.</p>' : '')+
     (state.sessions.length > 1 ? '<div class="chips" aria-label="Cambiar sesión">'+chips+'</div>' : '')+
     list+'<p class="small muted">Toca el dibujo para ver el movimiento.'+(pending ? ' Rutina sugerida a partir de protocolos comunes para epicondilitis: confírmala con Santiago.' : '')+'</p></section>'+
-    '<section><h2>Registro del día</h2>'+regForm(getDraft(), "p", saveStatus(), draftDirty(), "Guardar registro")+alert+'</section>';
+    '<section><h2>Registro del día</h2>'+(log.savedAt && !draftDirty() && !regOpen
+      ? '<div class="pain regmini"><div><b>'+esc(logSummary(log) || "Sin datos")+'</b><span class="small muted">'+saveStatus()+'</span></div><button class="btn ghost sm" data-regopen>Editar</button></div>'
+      : regForm(getDraft(), "p", saveStatus(), draftDirty(), "Guardar registro"))+alert+'</section>';
 }
 const BRK = ["Nada","Poco","A medias","Casi todas","Todas"];
 const PAIN_TXT = [
@@ -1068,7 +1072,7 @@ function regForm(dr, px, status, dirty, saveLbl){
 }
 
 /* editing past days */
-let editDay = null, histDays = 7;
+let editDay = null, histDays = 7, regOpen = false;
 const dayName = k => { const tk = key(new Date()), yk = key(addDays(new Date(), -1));
   const base = parseKey(k).toLocaleDateString("es-CO", {weekday:"long", day:"numeric", month:"long"}).replace(",", "");
   return k === tk ? "Hoy, " + base : k === yk ? "Ayer, " + base : base.charAt(0).toUpperCase() + base.slice(1); };
@@ -1097,7 +1101,7 @@ function historyHtml(){
   return '<div class="days">'+rows+'</div>'+(more ? '<div class="row"><button class="btn ghost" data-morehist>Ver días anteriores</button></div>' : '');
 }
 function editDaySheet(k, keep){
-  if (k === key(new Date())){ tab = "hoy"; closeSheet(); render(); syncNav(); const sb2 = $("#d-save"); if (sb2) sb2.scrollIntoView({block:"center"}); return; }
+  if (k === key(new Date())){ tab = "hoy"; regOpen = true; closeSheet(); render(); syncNav(); const sb2 = $("#d-save"); if (sb2) sb2.scrollIntoView({block:"center"}); return; }
   const l = state.logs[k] || {};
   editDay = keep && keep.key === k ? keep : {key: k, painL: l.painL, painR: l.painR, ice: !!l.ice, heat: !!l.heat, breaks: l.breaks, note: l.note || ""};
   const st = dayStats(k), has = !!logSummary(l);
@@ -1241,10 +1245,10 @@ function viewProgreso(){
       '<div class="bar"><span style="width:'+pct+'%"></span></div>'+
       '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p></div>'+
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
-    fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
     '<h2>Dolor y constancia, 28 días</h2>'+painHtml()+insight()+
     '<h2>Hábitos, 28 días</h2>'+habitsHtml()+
     '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
+    fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
     '<h2>Cómo sumas puntos</h2><p class="small muted">10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Aparte, tu fondo suma plata real. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p>';
 }
 
@@ -1614,6 +1618,7 @@ document.addEventListener("click", ev => {
   if (d.savelog !== undefined){ if (inSheet(t) && editDay) commitEdit(); else commitDraft(); return; }
   if (d.editday){ editDaySheet(d.editday); return; }
   if (d.painguide !== undefined){ painGuide(); return; }
+  if (d.regopen !== undefined){ regOpen = true; render(); const f = $("#p-painL"); if (f) f.closest("section").scrollIntoView({block:"start"}); return; }
   if (d.guideback !== undefined){ const g = guideFrom; guideFrom = null; if (g) editDaySheet(g.key, g); else closeSheet(); return; }
   if (d.morehist !== undefined){ histDays += 14; render(); return; }
   if (d.clearday){
