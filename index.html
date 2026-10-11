@@ -541,7 +541,7 @@ const CUR_V = 8, CFG = window.FIBRA_CONFIG || {};
 let sb = null, session = null, lastSync = 0, dirty = false;
 const cloudReady = () => !!(sb && session);
 const canMedia = cloudReady;
-const SYNC_TXT = {local:"Solo en este celular", nologin:"Solo en este celular", syncing:"Sincronizando…", ok:"Guardado en la nube", offline:"Sin internet: se sube al volver", error:"No se pudo guardar en la nube"};
+const SYNC_TXT = {local:"Solo en este dispositivo", nologin:"Solo en este dispositivo", syncing:"Sincronizando…", ok:"Guardado en la nube", offline:"Sin internet: se sube al volver", error:"No se pudo guardar en la nube"};
 function setSync(k){ const b = $("#sync"); if (b) b.textContent = SYNC_TXT[k] || k; }
 const netDown = err => navigator.onLine === false || /fetch|network|load failed/i.test(String((err && err.message) || err || ""));
 function persistLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {} }
@@ -555,10 +555,30 @@ async function push(){
   catch(e){ error = e; }
   writing = false;
   if (error) setSync(netDown(error) ? "offline" : "error");
-  else { dirty = false; lastSync = Date.now(); setSync("ok"); }
+  else { dirty = false; lastSync = Date.now(); setSync("ok"); markSynced(); }
   if (pendingWrite){ pendingWrite = false; push(); }
 }
 function adopt(d){ const keepD = draftDay && draftDirty(); state = migrate(JSON.parse(JSON.stringify(d))); persistLocal(); if (!keepD) draftDay = null; }
+const SYNC_UID = "fibra-synced-uid";
+const syncedUid = () => { try { return localStorage.getItem(SYNC_UID); } catch(e){ return null; } };
+const markSynced = () => { try { if (session) localStorage.setItem(SYNC_UID, session.user.id); } catch(e){} };
+/* Solo la primera vez que esta cuenta se sincroniza en este dispositivo: si la nube es más nueva pero este dispositivo tiene días o gustos que la nube no tiene, no se pierden */
+function mergeLocal(local){
+  let added = false;
+  const REG = ["painL","painR","breaks","ice","heat","note","savedAt"];
+  for (const k of Object.keys(local.logs || {})){
+    const ll = local.logs[k], rl = state.logs[k];
+    if (!ll) continue;
+    if (!rl){ state.logs[k] = JSON.parse(JSON.stringify(ll)); added = true; continue; }
+    for (const id of Object.keys(ll.done || {})) if (ll.done[id] && !(rl.done && rl.done[id])){ rl.done = rl.done || {}; rl.done[id] = true; added = true; }
+    if ((ll.savedAt || 0) > (rl.savedAt || 0)){ REG.forEach(f => { if (ll[f] === undefined) delete rl[f]; else rl[f] = ll[f]; }); added = true; }
+    if (!rl.session && ll.session){ rl.session = ll.session; added = true; }
+  }
+  const ids = new Set((state.spends || []).map(x => x.id));
+  for (const x of (local.spends || [])) if (!ids.has(x.id)){ state.spends = state.spends || []; state.spends.push(x); added = true; }
+  if (local.fundStart && (!state.fundStart || local.fundStart < state.fundStart)){ state.fundStart = local.fundStart; added = true; }
+  return added;
+}
 function refreshOpen(){ if ($("#scrim").hidden) render(); else if (detailId) drawDetail(); }
 async function pull(){
   if (!cloudReady() || writing) return;
@@ -569,12 +589,14 @@ async function pull(){
   if (error){ setSync(netDown(error) ? "offline" : "error"); return; }
   const remote = data && data.data;
   if (remote && (remote.updatedAt || 0) > (state.updatedAt || 0)){
-    adopt(remote); dirty = false; lastSync = Date.now(); setSync("ok"); refreshOpen();
-    if ((remote.v || 1) < CUR_V) save();
+    const local = state, first = syncedUid() !== session.user.id;
+    adopt(remote); const merged = first && mergeLocal(local); if (merged) persistLocal();
+    dirty = false; lastSync = Date.now(); setSync("ok"); refreshOpen();
+    if (merged || (remote.v || 1) < CUR_V) save(); else markSynced();
   } else if (!remote || (state.updatedAt || 0) > (remote.updatedAt || 0)){
     if (!state.updatedAt) state.updatedAt = Date.now();
     persistLocal(); await push();
-  } else { dirty = false; lastSync = Date.now(); setSync("ok"); }
+  } else { dirty = false; lastSync = Date.now(); setSync("ok"); markSynced(); }
 }
 async function initCloud(){
   const make = window.supabase && window.supabase.createClient;
@@ -642,7 +664,7 @@ async function doAuth(kind){
     const res = kind === "up" ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
     if (res.error){ msg(authErr(res.error), true); return; }
     if (!res.data || !res.data.session){ msg("Te llegó un correo para confirmar la cuenta. Ábrelo, vuelve aquí y dale Entrar."); return; }
-    session = res.data.session; closeSheet(); toast("Listo. Tus datos ahora se guardan en la nube");
+    session = res.data.session; closeSheet(); toast("Listo. Tus datos ahora se guardan en la nube"); setTimeout(pull, 0);
   } catch(e){ msg(navigator.onLine === false ? "Sin internet. Intenta cuando tengas conexión." : "No se pudo conectar. Intenta de nuevo.", true); }
 }
 function backupHtml(){
@@ -654,12 +676,12 @@ function accountSheet(){
   stopAnim(); detailId = null;
   if (sb && !session){ loginSheet(); return; }
   const head = '<div class="sh"><h3>'+(sb ? "Tu cuenta" : "Tus datos")+'</h3><button class="btn ghost sm" data-close>Cerrar</button></div>';
-  if (!sb){ openSheet(head + '<p>Esta copia de Fibra no tiene la nube configurada: todo se guarda solo en este celular.</p>' + backupHtml(), "[data-close]"); return; }
+  if (!sb){ openSheet(head + '<p>Esta copia de Fibra no tiene la nube configurada: todo se guarda solo en este dispositivo.</p>' + backupHtml(), "[data-close]"); return; }
   openSheet(head + '<p>'+esc(session.user.email || "")+'</p>'+
     '<p class="small muted">'+(lastSync ? "Última sincronización: " + new Date(lastSync).toLocaleTimeString("es-CO", {hour:"numeric", minute:"2-digit"}) : "Todavía no se ha sincronizado en esta visita.")+'</p>'+
     '<div class="row" style="margin:8px 0 4px"><button class="btn ghost" data-syncnow>Sincronizar ahora</button></div>'+
     backupHtml()+
-    '<h4>Sesión</h4><p class="small muted">Si cierras sesión, tus datos siguen en la nube y en este celular.</p><button class="btn danger" data-signout>Cerrar sesión</button>', "[data-close]");
+    '<h4>Sesión</h4><p class="small muted">Si cierras sesión, tus datos siguen en la nube y en este dispositivo.</p><button class="btn danger" data-signout>Cerrar sesión</button>', "[data-close]");
 }
 function exportBackup(){
   const blob = new Blob([JSON.stringify(state)], {type: "application/json"});
@@ -991,7 +1013,7 @@ function viewHoy(pop){
   nextHtml += '<button class="next fundline" data-go="progreso">Tu fondo: <b>'+money(fd.left)+'</b>. '+(todayCounts ? "Hoy ya sumaste "+money(FUND_DAY)+"." : "Hoy sumas "+money(FUND_DAY)+" si haces al menos la mitad de la sesión.")+'</button>';
   if (!ready && nxt) nextHtml += '<button class="next" data-go="progreso">Próxima recompensa: <b>'+esc(nxt.r.text)+'</b>. '+esc(nxt.i.left)+'.</button>';
 
-  if (sb && !session) nextHtml = '<button class="next cloud" data-login>Tus datos están solo en este celular. <b>Inicia sesión</b> para respaldarlos en la nube.</button>' + nextHtml;
+  if (sb && !session) nextHtml = '<button class="next cloud" data-login>Tus datos están solo en este dispositivo. <b>Inicia sesión</b> para respaldarlos en la nube.</button>' + nextHtml;
   const nd = nudged();
   if (nd.length) nextHtml += '<button class="next" data-go="rutina">'+(nd.length === 1 ? esc(nd[0].name)+' podría estar listo' : nd.length+' ejercicios podrían estar listos')+' para más carga. Confírmalo con Santiago.</button>';
   let chips = "";
