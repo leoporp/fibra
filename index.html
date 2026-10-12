@@ -150,6 +150,9 @@ button{cursor:pointer}
 .regin .pain{animation:swapin var(--t3) var(--e-out) both}
 .chkrow .box{transition:background-color var(--t2) var(--e-out),border-color var(--t2) var(--e-out)}
 .chkrow.on .box{animation:ckpop .4s var(--e-spring)}
+.effort{margin:6px 0 12px}
+.segs.four{grid-template-columns:repeat(4,1fr)}
+.hintline{margin:-4px 0 8px;color:var(--ink);background:var(--soft);border-radius:8px;padding:6px 10px}
 .days{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .dayrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .dayrow b{display:block;font-size:15px}
@@ -897,13 +900,18 @@ function loadNudge(e){
   if (e.progSnooze && e.progSnooze > tk) return false;
   const last = (e.loadHistory || []).slice(-1)[0], start = key(addDays(today,-14));
   if (last && last.d > start) return false;
-  let doneDays = 0; const pains = [];
+  let doneDays = 0; const pains = [], effs = [];
   for (let i = 1; i <= 14; i++){
     const k = key(addDays(today,-i)), l = state.logs[k]; if (!l) continue;
     if (l.done && l.done[e.id]) doneDays++;
+    if (l.effort && l.effort[e.id]) effs.push({k, v: l.effort[e.id]});
     if (e.reps && l.reps && l.reps[e.id] && l.reps[e.id].some(v => typeof v === "number" && v < e.reps)) return false;
     const st = dayStats(k); if (st.pain !== null) pains.push(st.pain);
   }
+  effs.sort((a, b) => a.k < b.k ? 1 : -1);
+  if (effs.length && effs[0].v >= 3) return false;
+  const painOk = !pains.length || (pains.reduce((a,b) => a+b, 0)/pains.length <= 3 && Math.max(...pains) <= 4);
+  if (effs.length >= 2 && effs[0].v === 1 && effs[1].v === 1 && painOk) return true;
   if (doneDays < 4 || pains.length < 4) return false;
   return pains.reduce((a,b) => a+b, 0)/pains.length <= 3 && Math.max(...pains) <= 4;
 }
@@ -951,9 +959,11 @@ function fmtReps(e, arr){
   if (!e.perArm) return v.join(" · ");
   const out = []; for (let i = 0; i < v.length; i += 2) out.push(v[i] + (i+1 < v.length ? "/" + v[i+1] : "")); return out.join(" · ");
 }
+const EFFORT = ["Muy fácil", "Bien", "Difícil", "No pude"];
+const effortTxt = n => ["se sintió muy fácil", "se sintió bien", "se sintió difícil", "no pudiste completarlo"][n-1] || "";
 function lastTime(e){
   const tk = key(new Date()), ks = Object.keys(state.logs).filter(k => k < tk).sort().reverse();
-  for (const k of ks){ const l = state.logs[k]; if (l && ((l.reps && l.reps[e.id] && l.reps[e.id].length) || (l.loads && l.loads[e.id]))) return {k, reps: (l.reps && l.reps[e.id]) || [], load: (l.loads && l.loads[e.id]) || ""}; }
+  for (const k of ks){ const l = state.logs[k]; if (l && ((l.reps && l.reps[e.id] && l.reps[e.id].length) || (l.loads && l.loads[e.id]) || (l.effort && l.effort[e.id]))) return {k, reps: (l.reps && l.reps[e.id]) || [], load: (l.loads && l.loads[e.id]) || "", effort: (l.effort && l.effort[e.id]) || 0}; }
   return null;
 }
 function completeSet(id, val){
@@ -983,10 +993,15 @@ function drawFlow(){
   const unitTxt = e.unit === "seg" ? "segundos" : "repeticiones";
   const loadLine = loadEdit ? '<div class="loadedit"><input type="text" id="load-in" value="'+esc(e.load || "")+'" placeholder="Ej: mancuerna sin discos, 2 kg" aria-label="Carga"><button class="btn sm" data-loadsave>Guardar</button></div>'
     : '<p class="small loadline">Carga: <b>'+esc(e.load || "sin definir")+'</b> <button class="linkish" data-loadedit>Cambiar</button></p>';
-  const lastLine = lt ? '<p class="small muted lastline">La última vez ('+esc(fmtShort(lt.k))+'): '+(lt.load ? esc(lt.load)+'. ' : '')+(lt.reps.length ? esc(fmtReps(e, lt.reps))+' '+(e.perArm ? '(der/izq)' : '') : '')+'</p>' : '';
+  const lastLine = lt ? '<p class="small muted lastline">La última vez ('+esc(fmtShort(lt.k))+'): '+(lt.load ? esc(lt.load)+'. ' : '')+(lt.reps.length ? esc(fmtReps(e, lt.reps))+(e.unit === "seg" ? ' s' : '')+(e.perArm ? ' (der/izq)' : '')+'. ' : '')+(lt.effort ? esc(effortTxt(lt.effort).charAt(0).toUpperCase() + effortTxt(lt.effort).slice(1))+'.' : '')+'</p>'+
+    (lt.effort === 1 ? '<p class="small hintline">La última vez fue muy fácil: si Santiago está de acuerdo, prueba con un poco más de peso.</p>' : lt.effort === 4 ? '<p class="small hintline">La última vez no pudiste completarlo: prueba con menos peso.</p>' : '') : '';
+  const myEff = todayLog.effort && todayLog.effort[e.id];
+  const effortBox = '<div class="effort"><span class="lbl">¿Cómo se sintió con esta carga?</span><div class="segs four" role="group" aria-label="Qué tan fácil fue">'+
+    EFFORT.map((t, i) => '<button class="seg'+(myEff === i+1 ? " on" : "")+'" data-effort="'+(i+1)+'" aria-pressed="'+(myEff === i+1)+'">'+t+'</button>').join("")+'</div></div>';
   if (isDone){
     h += '<p class="phase" style="min-height:0;margin-bottom:6px">Ejercicio completo</p>'+
-      (todayReps && todayReps.length ? '<p class="small" style="margin:0 0 10px">Hoy: '+esc(fmtReps(e, todayReps))+(e.perArm ? ' (der/izq)' : '')+' '+unitTxt+(todayLog.loads && todayLog.loads[e.id] ? ', con '+esc(todayLog.loads[e.id]) : '')+'.</p>' : '')+
+      (todayReps && todayReps.length ? '<p class="small" style="margin:0 0 6px">Hoy: '+esc(fmtReps(e, todayReps))+(e.perArm ? ' (der/izq)' : '')+' '+unitTxt+'.</p>' : '')+
+      loadLine+effortBox+
       '<div class="row">'+
       (nx ? '<button class="btn" data-next>Siguiente ejercicio</button>' : '<button class="btn" data-close>Terminar</button>')+
       '<button class="btn ghost" data-undone="'+e.id+'">Desmarcar</button></div>';
@@ -1441,7 +1456,7 @@ function santiagoText(){
   let t = "Hola Santiago, estoy organizando mi rutina en una app con 4 sesiones que voy rotando. Algunos ejercicios son los que me pusiste y otros son sugeridos. ¿Me ayudas a revisar si está bien, qué cambiarías y qué me falta de lo que me mandaste?\n\n";
   state.sessions.forEach((s,i) => {
     t += "Sesión " + letter(i) + " (" + s.name + "):\n";
-    s.items.map(exById).filter(Boolean).forEach(e => { const lt = lastTime(e); t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.confirmed ? "" : " (por confirmar)") + (lt && lt.reps.length ? ". La última vez hice " + fmtReps(e, lt.reps) + (e.perArm ? " (der/izq)" : "") + (lt.load ? " con " + lt.load : "") : "") + "\n"; });
+    s.items.map(exById).filter(Boolean).forEach(e => { const lt = lastTime(e); t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.confirmed ? "" : " (por confirmar)") + (lt && lt.reps.length ? ". La última vez hice " + fmtReps(e, lt.reps) + (e.unit === "seg" ? " s" : "") + (e.perArm ? " (der/izq)" : "") + (lt.load ? " con " + lt.load : "") : "") + (lt && lt.effort ? " y " + effortTxt(lt.effort).replace("pudiste", "pude") : "") + "\n"; });
     t += "\n";
   });
   t += "Para que cada sesión me tome unos 20 minutos, dejé 3 series en el excéntrico o el isométrico de extensores y 2 en los demás. ¿Te parece bien esa dosis o cambiarías algo?\n\nLos adapté a lo que tengo en casa: mancuernas ajustables de 2 a 7 kg, una banda grande, 3 mini bandas y una toalla.\n\nAntes de cada sesión caliento unos 3 minutos: círculos de muñeca, abrir y cerrar las manos, girar los antebrazos sin peso, círculos de hombros y unas repeticiones del primer ejercicio sin peso. ¿Le cambiarías algo?\n\n";
@@ -1471,7 +1486,7 @@ function viewRutina(){
       '<div class="small muted">'+esc(e.zone || "")+(rx(e) ? ", "+esc(rx(e)) : "")+'</div>'+
       '<div class="small muted" style="margin-top:4px">'+(used ? "En sesiones: " + used : "No está en ninguna sesión")+(nMedia ? ". " + nMedia + (nMedia === 1 ? " foto o video" : " fotos o videos") : "")+'</div>'+
       (hist ? '<div class="hist">Carga: '+hist+'</div>' : '') +
-      ((lt => lt && lt.reps.length ? '<div class="hist">Última vez, '+esc(fmtShort(lt.k))+': '+esc(fmtReps(e, lt.reps))+(e.perArm ? ' (der/izq)' : '')+'</div>' : '')(lastTime(e))) +
+      ((lt => lt && (lt.reps.length || lt.effort) ? '<div class="hist">Última vez, '+esc(fmtShort(lt.k))+': '+esc(fmtReps(e, lt.reps))+(lt.reps.length && e.unit === "seg" ? ' s' : '')+(lt.reps.length && e.perArm ? ' (der/izq)' : '')+(lt.effort ? (lt.reps.length ? ', ' : '')+esc(EFFORT[lt.effort-1].toLowerCase()) : '')+'</div>' : '')(lastTime(e))) +
       (loadNudge(e) ? '<span class="tag go">Listo para subir carga</span> ' : '') +
       (!e.confirmed ? '<span class="tag pend">Por confirmar con Santiago</span>' : '') + '</div></div></div>';
   }
@@ -1884,11 +1899,15 @@ document.addEventListener("click", ev => {
   if (d.setdone){ unlockAudio(); completeSet(d.setdone); return; }
   if (d.rep){ const e = exById(detailId); if (e){ repN = Math.max(0, Math.min((e.reps || 0) + 20, (repN || 0) + Number(d.rep))); repBump = true; drawFlow(); } return; }
   if (d.early !== undefined){ if (tmr && tmr.kind === "work"){ const id = tmr.id, el = Math.max(1, Math.round((Date.now() - (tmr.endsAt - tmr.total*1000))/1000)); stopTimer(); completeSet(id, Math.min(el, tmr ? tmr.total : el)); } return; }
+  if (d.effort){ const e = exById(detailId); if (e){ const lg = ensureLog(key(new Date())), v = Number(d.effort); lg.effort = lg.effort || {};
+      if (lg.effort[e.id] === v) delete lg.effort[e.id]; else lg.effort[e.id] = v;
+      if (e.load){ lg.loads = lg.loads || {}; if (!lg.loads[e.id]) lg.loads[e.id] = e.load; }
+      save(); drawFlow(); if (lg.effort[e.id]) toast("Anotado: " + EFFORT[v-1].toLowerCase()); } return; }
   if (d.loadedit !== undefined){ loadEdit = true; drawFlow(); const i = $("#load-in"); if (i){ i.focus(); i.select(); } return; }
   if (d.loadsave !== undefined){ const e = exById(detailId), v = ($("#load-in").value || "").trim(); loadEdit = false;
     if (e && v && v !== e.load){ const prev = e.load || ""; e.load = v; e.loadHistory = e.loadHistory || []; const tk = key(new Date()), last = e.loadHistory[e.loadHistory.length-1];
       if (last && last.d === tk) last.load = v; else e.loadHistory.push({d: tk, load: v});
-      const lg = state.logs[tk]; if (lg && lg.loads && lg.loads[e.id]) lg.loads[e.id] = v;
+      const lg = state.logs[tk]; if (lg && ((lg.loads && lg.loads[e.id]) || (lg.done && lg.done[e.id]) || (lg.sets && lg.sets[e.id]))){ lg.loads = lg.loads || {}; lg.loads[e.id] = v; }
       save(); toast(prev ? "Carga: " + prev + " → " + v : "Carga guardada"); const hp = $("#sheet .sh p"); if (hp) hp.textContent = rx(e); }
     drawFlow(); return; }
   if (d.work){ unlockAudio(); const e = exById(d.work); if (e) startTimer(e.id, "work", e.reps); return; }
