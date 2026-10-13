@@ -288,6 +288,8 @@ textarea.note{width:100%;min-height:70px;margin-top:8px;border:1px solid var(--l
 .chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
 .chart svg{width:100%;height:auto;display:block}
 .chart .tx{fill:var(--muted);font-size:10px}
+.chart .tx.lane{font-size:9.5px}
+#view.enter .lcell{animation:fadein .5s var(--e-out) .2s both}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-top:8px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
 .insight{background:var(--soft);border-radius:12px;padding:12px 14px;margin-top:10px;font-size:15px}
@@ -1327,18 +1329,19 @@ function fibersSvg(n){
   }
   return '<svg viewBox="0 0 '+W+' '+(rows*gap+8)+'" role="img" aria-label="'+n+' de '+rows+' fibras alineadas">'+p+'</svg>';
 }
-const PAIN_N = 28, P_TOP = 8, P_H = 110, B_TOP = P_TOP + P_H + 18, B_H = 26;
+const PAIN_N = 28, P_TOP = 8, P_H = 110, B_TOP = P_TOP + P_H + 14, B_H = 22, LANE_H = 10, LANE_GAP = 7;
 function painSeries(){
   const today = new Date(), out = [];
   for (let i = 0; i < PAIN_N; i++){ const k = key(addDays(today, i-(PAIN_N-1))), l = state.logs[k] || {};
     const L = typeof l.painL === "number" ? l.painL : null, R = typeof l.painR === "number" ? l.painR : null;
     const st = dayStats(k);
-    out.push({k, L, R, M: L === null && R === null ? null : Math.max(L === null ? -1 : L, R === null ? -1 : R), frac: st.total ? Math.min(1, st.done/st.total) : 0, full: st.full}); }
+    out.push({k, L, R, M: L === null && R === null ? null : Math.max(L === null ? -1 : L, R === null ? -1 : R), frac: st.total ? Math.min(1, st.done/st.total) : 0, full: st.full,
+      ice: !!l.ice, heat: !!l.heat, brk: typeof l.breaks === "number" ? l.breaks : null}); }
   return out;
 }
 function chartSvg(){
   const arms = state.painView === "arms", data = painSeries();
-  const W = 340, x0 = 24, x1 = arms ? W - 30 : W - 8, top = P_TOP, H = P_H, base = top + H;
+  const W = 340, x0 = 46, x1 = arms ? W - 30 : W - 8, top = P_TOP, H = P_H, base = top + H;
   const X = i => x0 + i*(x1 - x0)/(PAIN_N - 1), Y = v => top + (10 - v)/10*H;
   let grid = "";
   for (let v = 0; v <= 10; v += 2) grid += '<line x1="'+x0+'" x2="'+x1+'" y1="'+Y(v)+'" y2="'+Y(v)+'" style="stroke:var(--line)"'+(v ? ' stroke-dasharray="2 4"' : '')+'/><text x="'+(x0-6)+'" y="'+(Y(v)+3.5)+'" class="tx" text-anchor="end">'+v+'</text>';
@@ -1364,13 +1367,24 @@ function chartSvg(){
     if (yr !== null) labels += '<text x="'+(x1+6)+'" y="'+(yr+3.5)+'" class="tx">Der</text>';
   } else lines = line("M", "--ink", false, "ci").svg;
   const xl = i => parseKey(data[i].k).toLocaleDateString("es-CO", {day:"numeric", month:"short"}).replace(".", "");
-  const bBase = B_TOP + B_H, bw = Math.max(3, (x1 - x0)/(PAIN_N - 1) - 3);
-  let bars = '<text x="'+x0+'" y="'+(B_TOP-5)+'" class="tx">Sesión hecha</text><line x1="'+x0+'" x2="'+x1+'" y1="'+bBase+'" y2="'+bBase+'" style="stroke:var(--line)"/>';
-  data.forEach((d, i) => { if (d.frac > 0){ const h = Math.max(3, d.frac*B_H); bars += '<rect class="sbar" x="'+(X(i)-bw/2).toFixed(1)+'" y="'+(bBase-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" style="fill:var(--body)" opacity="'+(d.full ? .85 : .4)+'"/>'; } });
+  const sBase = B_TOP + B_H, bw = Math.max(3, (x1 - x0)/(PAIN_N - 1) - 3);
+  let bars = '<text x="0" y="'+(sBase-6)+'" class="tx lane">Sesión</text><line x1="'+x0+'" x2="'+x1+'" y1="'+sBase+'" y2="'+sBase+'" style="stroke:var(--line)"/>';
+  /* carriles alineados con las mismas fechas: hielo, calor y pausas */
+  const lanes = [["Hielo", d => d.ice ? 1 : 0], ["Calor", d => d.heat ? 1 : 0], ["Pausas", d => d.brk === null ? 0 : d.brk === 0 ? -1 : d.brk/5]];
+  lanes.forEach(([name, fn], li) => {
+    const ly = sBase + LANE_GAP + 2 + li*(LANE_H + LANE_GAP);
+    bars += '<text x="0" y="'+(ly+LANE_H-1.5)+'" class="tx lane">'+name+'</text>';
+    data.forEach((d, i) => { const v = fn(d), x = (X(i)-bw/2).toFixed(1);
+      if (v === -1) bars += '<rect class="lcell" x="'+x+'" y="'+(ly+.5)+'" width="'+bw.toFixed(1)+'" height="'+(LANE_H-1)+'" rx="2.5" style="fill:none;stroke:var(--muted)" stroke-dasharray="2 2" opacity=".7"/>';
+      else if (v > 0) bars += '<rect class="lcell" x="'+x+'" y="'+ly+'" width="'+bw.toFixed(1)+'" height="'+LANE_H+'" rx="2.5" style="fill:var(--body)" opacity="'+(.15 + .7*v).toFixed(2)+'"/>';
+      else bars += '<rect x="'+x+'" y="'+(ly+LANE_H/2-1)+'" width="'+bw.toFixed(1)+'" height="2" rx="1" style="fill:var(--line)"/>'; });
+  });
+  const bBase = sBase + LANE_GAP + 2 + lanes.length*(LANE_H + LANE_GAP) - LANE_GAP;
+  data.forEach((d, i) => { if (d.frac > 0){ const h = Math.max(3, d.frac*B_H); bars += '<rect class="sbar" x="'+(X(i)-bw/2).toFixed(1)+'" y="'+(sBase-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" style="fill:var(--body)" opacity="'+(d.full ? .85 : .4)+'"/>'; } });
   const xlab = '<text x="'+x0+'" y="'+(bBase+14)+'" class="tx">'+xl(0)+'</text><text x="'+X(14)+'" y="'+(bBase+14)+'" class="tx" text-anchor="middle">'+xl(14)+'</text><text x="'+x1+'" y="'+(bBase+14)+'" class="tx" text-anchor="end">hoy</text>';
   let hits = "";
   data.forEach((d, i) => { const w = (x1 - x0)/(PAIN_N - 1); hits += '<rect data-pday="'+i+'" x="'+(X(i) - w/2).toFixed(1)+'" y="'+top+'" width="'+w.toFixed(1)+'" height="'+(bBase - top)+'" style="fill:transparent;cursor:pointer"/>'; });
-  return '<svg viewBox="0 0 '+W+' '+(bBase+20)+'" role="img" aria-label="Dolor de 0 a 10 y sesión hecha, últimos 28 días">'+grid+bars+xlab+
+  return '<svg viewBox="0 0 '+W+' '+(bBase+20)+'" role="img" aria-label="Dolor de 0 a 10, sesión, hielo, calor y pausas activas de los últimos 28 días">'+grid+bars+xlab+
     '<line id="pday-line" x1="0" x2="0" y1="'+top+'" y2="'+bBase+'" style="stroke:var(--muted)" stroke-width="1" visibility="hidden"/>'+
     '<clipPath id="reveal"><rect class="revealr" x="0" y="0" width="'+W+'" height="'+(base+6)+'"/></clipPath><g clip-path="url(#reveal)">'+lines+'</g>'+labels+'<g id="pday-dots"></g>'+hits+'</svg>';
 }
@@ -1378,15 +1392,16 @@ function painDayText(i){
   const d = painSeries()[i], name = parseKey(d.k).toLocaleDateString("es-CO", {weekday:"short", day:"numeric", month:"short"}).replace(/\./g, "");
   const nm = name.charAt(0).toUpperCase() + name.slice(1), st = dayStats(d.k);
   const ex = st.total ? ", " + st.done + " de " + st.total + " ejercicios" : "";
-  if (d.M === null) return nm + ": sin dolor registrado" + ex + ".";
-  return nm + ": izquierdo " + (d.L === null ? "sin dato" : d.L) + ", derecho " + (d.R === null ? "sin dato" : d.R) + ex + ".";
+  const hb = (d.ice ? ", hielo" : "") + (d.heat ? ", calor" : "") + (d.brk === null ? "" : d.brk === 0 ? ", pausas no aplica" : ", pausas: " + BRK[d.brk-1].toLowerCase());
+  if (d.M === null) return nm + ": sin dolor registrado" + ex + hb + ".";
+  return nm + ": izquierdo " + (d.L === null ? "sin dato" : d.L) + ", derecho " + (d.R === null ? "sin dato" : d.R) + ex + hb + ".";
 }
 function painHtml(){
-  const arms = state.painView === "arms", data = painSeries(), hasAny = data.some(d => d.M !== null || d.frac > 0);
+  const arms = state.painView === "arms", data = painSeries(), hasAny = data.some(d => d.M !== null || d.frac > 0 || d.ice || d.heat || d.brk !== null);
   const legend = arms ? '<div class="legend"><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armL)" stroke-width="2"/><circle cx="13" cy="5" r="4" style="fill:var(--armL)"/></svg>Izquierdo</span><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armR)" stroke-width="2" stroke-dasharray="5 4"/><rect x="9" y="1" width="8" height="8" rx="1.5" style="fill:var(--armR)"/></svg>Derecho</span></div>'
     : '<p class="small muted" style="margin:6px 0 0">La línea es el brazo que más dolió cada día, no un promedio.</p>';
   return '<div class="segs two" role="group" aria-label="Cómo ver el dolor"><button class="seg'+(arms ? "" : " on")+'" data-painview="max" aria-pressed="'+!arms+'">Brazo que más dolió</button><button class="seg'+(arms ? " on" : "")+'" data-painview="arms" aria-pressed="'+arms+'">Cada brazo</button></div>'+
-    '<div class="chart">'+(hasAny ? chartSvg() + legend + '<p class="small muted" style="margin:4px 0 0">Las barras de abajo son cuánto de la sesión hiciste ese día, con las mismas fechas: así ves si al entrenar más baja el dolor.</p><p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
+    '<div class="chart">'+(hasAny ? chartSvg() + legend + '<p class="small muted" style="margin:4px 0 0">Debajo, con las mismas fechas: cuánto de la sesión hiciste, hielo, calor y pausas activas (más oscuro, mejor; punteado, no aplicaba).</p>'+habitsLine()+'<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
 }
 
 function habitStats(days){
@@ -1398,6 +1413,10 @@ function habitStats(days){
   return {ice, heat, breaks: bn ? bsum/bn : null, painL: avg(pl), painR: avg(prr)};
 }
 const f1c = v => v.toFixed(1).replace(".", ",");
+function habitsLine(){
+  const h = habitStats(14);
+  return '<p class="small" style="margin:6px 0 0">Últimas 2 semanas: hielo '+h.ice+(h.ice === 1 ? " día" : " días")+', calor '+h.heat+(h.heat === 1 ? " día" : " días")+(h.breaks !== null ? ", pausas activas "+f1c(h.breaks)+" de 5 en promedio" : "")+'.</p>';
+}
 function habitsHtml(){
   const today = new Date(), N = 28; let ice = "", heat = "", brk = "", ses = "";
   for (let i = N-1; i >= 0; i--){ const k = key(addDays(today, -i)), l = state.logs[k] || {}, st = dayStats(k);
@@ -1446,7 +1465,7 @@ function viewProgreso(){
       '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p></div>'+
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
     '<h2>Dolor y constancia, 28 días</h2>'+painHtml()+insight()+
-    '<h2>Hábitos, 28 días</h2>'+habitsHtml()+
+
     '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
     fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
     '<h2>Cómo sumas puntos</h2><p class="small muted">10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Aparte, tu fondo suma plata real. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p>';
