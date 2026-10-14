@@ -398,6 +398,44 @@ html[data-vt=back]::view-transition-new(view){animation-name:vtInL}
   .d.pop i::after{animation:none}
   .toast{transition:none}
 }
+/* cita con Santiago y modo fisio */
+.sheet.full{max-height:100%;height:100%;border-radius:0;padding-top:calc(20px + env(safe-area-inset-top,0px))}
+.lead{font-size:17px}
+.stat b small{font-size:16px;font-weight:700;color:var(--muted);margin-left:1px}
+.citalist{margin:10px 0 0;padding-left:20px}
+.citalist li{margin:0 0 6px;font-size:15px}
+.cita-sum{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.cita-sum .stat{background:var(--bg)}
+.cambios{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.cambios summary{cursor:pointer;font-weight:700;font-size:15px}
+.leonotes{background:var(--soft);border-left:3px solid var(--fiber);border-radius:8px;padding:10px 12px;white-space:pre-wrap}
+.item.cita textarea{min-height:64px}
+.fc{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;transition:border-color var(--t2) var(--e-out)}
+.fc.ok{border-left-color:var(--cue)}
+.fc.adj{border-left-color:var(--fiber)}
+.fc.rm{border-left-color:var(--warn)}
+.fchead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.fcn{font-family:var(--display);font-size:20px;line-height:1.15;display:block;margin-bottom:2px}
+.fthumb{flex:none;width:88px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:4px;color:var(--muted);font-size:11px;text-align:center}
+.fthumb svg,.fthumb img{width:100%;height:auto;display:block;border-radius:6px}
+.fthumb .ph{display:block;padding:6px 2px;line-height:1.2}
+.fcrx{font-size:18px;font-weight:700;margin:10px 0 2px}
+.fq{margin-top:14px}
+.fq .lbl{font-size:15px;margin-bottom:6px}
+.segs.three{grid-template-columns:repeat(3,1fr)}
+.fc .segs.two{margin-bottom:4px}
+.fc .seg{font-size:15px;min-height:48px}
+.fprev{background:var(--bg);border-radius:8px;padding:6px 10px;margin:8px 0 0}
+.fwarn{background:var(--warn-soft);border-radius:8px;padding:8px 10px;margin:10px 0 0}
+b.warn{color:var(--warn)}
+.fedit{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.fstep > span{display:block;font-weight:700;font-size:15px;margin-bottom:6px}
+.stepper.sm{gap:10px}
+.stepper.sm b{font-size:24px}
+.stepper.sm .muted{font-size:14px}
+.frow{display:flex;align-items:center;gap:10px;margin-top:12px}
+.fbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:18px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:2}
+.tag.src{border-color:var(--cue);color:var(--cue)}
 </style>
 </head>
 <body>
@@ -617,6 +655,7 @@ function migrate(s){
   if (!s.fundV8){ s.fundStart = s.fundStart || key(new Date()); s.spends = s.spends || [];
     s.rewards = (s.rewards || []).filter(r => !OLD_RW.includes(r.text)); s.fundV8 = true; }
   if (!Array.isArray(s.spends)) s.spends = [];
+  if (!Array.isArray(s.visits)) s.visits = [];
   s.v = 8;
   return s;
 }
@@ -1179,7 +1218,7 @@ function viewHoy(){
 
   const worst = Math.max(...[log.painL, log.painR].filter(v => typeof v === "number"), -1);
   const alert = worst >= 7 ? '<div class="alert">Dolor alto hoy. Baja la carga o quédate con los isométricos, y si sigue así un par de días, avísale a Santiago.</div>' : "";
-  const pending = state.exercises.some(e => !e.confirmed);
+  const pending = state.exercises.some(e => !e.confirmed && !e.retired);
 
   return '<p class="date">'+esc(fmt)+'</p><h1>'+esc(title)+'</h1>'+bundle+
     '<div class="strands">'+week+'</div><p class="small muted" style="margin:0">'+goalTxt+'</p>'+nextHtml+
@@ -1465,6 +1504,7 @@ function viewProgreso(){
       '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p></div>'+
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
     '<h2>Dolor y constancia, 28 días</h2>'+painHtml()+insight()+
+    '<h2>Desde la última cita</h2>'+citaHtml("l")+
 
     '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
     fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
@@ -1489,6 +1529,220 @@ function santiagoText(){
   t += "También quería preguntarte cada cuánto debería subir la carga. Y en la próxima sesión, ¿te puedo grabar haciendo los ejercicios? Así no se me olvida cómo van.";
   return t;
 }
+/* ---------- cita con Santiago: resumen desde la última cita y modo fisio ---------- */
+const FISIO_KEY = "fibra-fisio";
+const EQUIP = "mancuernas ajustables de 2 a 7 kg con discos, una banda grande en círculo, 3 mini bandas y una toalla";
+const LEO_CREE = {iso_ext: 1, fingext: 1};
+let fisio = null, fisioOn = false;
+try { fisio = JSON.parse(localStorage.getItem(FISIO_KEY) || "null"); } catch(e){ fisio = null; }
+function keepFisio(){ try { if (fisio) localStorage.setItem(FISIO_KEY, JSON.stringify(fisio)); else localStorage.removeItem(FISIO_KEY); } catch(e){} }
+const lastVisit = () => { const v = state.visits || []; return v.length ? v[v.length-1] : null; };
+const activeEx = () => state.exercises.filter(e => !e.retired);
+const usedIn = e => state.sessions.map((s,i) => s.items.includes(e.id) ? letter(i) : null).filter(Boolean);
+const avgOf = a => a.length ? a.reduce((x,y) => x+y, 0)/a.length : null;
+function citaData(){
+  const today = new Date(), tk = key(today), lv = lastVisit();
+  const from = lv ? key(addDays(parseKey(lv.d), 1)) : key(addDays(today, -20));
+  const keys = []; for (let d = parseKey(from); key(d) <= tk; d = addDays(d, 1)) keys.push(key(d));
+  const c = {n: keys.length, trained: 0, pl: [], pr: [], painDays: 0, ice: 0, heat: 0, brk: [], notes: [], hard: {}, inc: {}, done: {}, loads: []};
+  c.expected = keys.length ? Math.max(1, Math.round(keys.length/7*state.weeklyGoal)) : 0;
+  for (const k of keys){
+    if (dayStats(k).counts) c.trained++;
+    const l = state.logs[k]; if (!l) continue;
+    const hasL = typeof l.painL === "number", hasR = typeof l.painR === "number";
+    if (hasL) c.pl.push(l.painL); if (hasR) c.pr.push(l.painR); if (hasL || hasR) c.painDays++;
+    if (l.ice) c.ice++; if (l.heat) c.heat++; if (typeof l.breaks === "number" && l.breaks > 0) c.brk.push(l.breaks);
+    if (l.note) c.notes.push({k, t: l.note});
+    for (const id of Object.keys(l.done || {})) if (l.done[id]) c.done[id] = (c.done[id] || 0) + 1;
+    for (const id of Object.keys(l.effort || {})){ const v = l.effort[id]; if (v >= 3){ const h = c.hard[id] = c.hard[id] || {d: 0, n: 0}; if (v === 3) h.d++; else h.n++; } }
+    for (const id of Object.keys(l.reps || {})){ const e = exById(id); if (e && e.reps && (l.reps[id] || []).some(v => typeof v === "number" && v < e.reps)) c.inc[id] = (c.inc[id] || 0) + 1; }
+  }
+  for (const e of state.exercises){ const h = e.loadHistory || []; h.forEach((x, i) => { if (x.d >= from && x.d <= tk) c.loads.push({e, from: i ? h[i-1].load : "", to: x.load}); }); }
+  return c;
+}
+function citaHtml(who){
+  const S = who === "s", c = citaData(), lv = lastVisit(), vb = (s, l) => S ? s : l;
+  const changes = lv && lv.changes && lv.changes.length ? '<details class="cambios"><summary>En la última cita '+vb("cambiaste", "Santiago cambió")+' '+lv.changes.length+(lv.changes.length === 1 ? " cosa" : " cosas")+'</summary><ul class="citalist">'+lv.changes.map(x => '<li>'+esc(x)+'</li>').join("")+'</ul>'+
+    (lv.loadRule ? '<p class="small"><b>Para subir carga:</b> '+esc(lv.loadRule)+'</p>' : '')+(lv.note ? '<p class="small"><b>Nota:</b> '+esc(lv.note)+'</p>' : '')+'</details>' : '';
+  const head = lv ? (c.n ? "Desde la cita del " + fmtShort(lv.d) + ": " + c.n + (c.n === 1 ? " día." : " días.") : "La cita fue hoy. Lo nuevo empieza a contar desde mañana.")
+    : "Últimas 3 semanas. Todavía no hay citas guardadas en la app.";
+  if (!c.n) return '<div class="cita-sum"><p class="small muted" style="margin:0">'+head+'</p>'+changes+'</div>';
+  const pt = (side, a) => { const m = avgOf(a);
+    return '<div class="stat"><b>'+(m === null ? "–" : f1c(m))+'</b><span>dolor '+side+(a.length ? ' · peor '+Math.max(...a) : '')+'</span></div>'; };
+  const nm = id => { const e = exById(id); return e ? e.name : "Ejercicio borrado"; };
+  const li = [];
+  if (c.loads.length) li.push('<b>Cargas que '+vb("subió", "subiste")+':</b> '+c.loads.map(x => esc(x.e.name)+': '+(x.from ? esc(x.from)+' → ' : '')+esc(x.to)).join("; ")+'.');
+  const hard = Object.keys(c.hard).map(id => esc(nm(id))+' ('+[c.hard[id].d ? 'difícil '+c.hard[id].d : '', c.hard[id].n ? vb('no pudo ', 'no pudiste ')+c.hard[id].n : ''].filter(Boolean).join(", ")+')');
+  if (hard.length) li.push('<b>Se '+vb("le hicieron", "te hicieron")+' difíciles:</b> '+hard.join("; ")+'.');
+  const inc = Object.keys(c.inc).map(id => esc(nm(id))+' ('+c.inc[id]+(c.inc[id] === 1 ? ' día' : ' días')+')');
+  if (inc.length) li.push('<b>Series incompletas:</b> '+inc.join("; ")+'.');
+  if (!hard.length && !inc.length && c.trained) li.push(vb("No marcó", "No marcaste")+' ningún ejercicio como difícil ni dejó series incompletas.');
+  li.push('Hielo '+c.ice+(c.ice === 1 ? ' día' : ' días')+', calor '+c.heat+(c.heat === 1 ? ' día' : ' días')+(c.brk.length ? ', pausas activas '+f1c(avgOf(c.brk))+' de 5 en promedio' : '')+'.');
+  if (c.notes.length) li.push('<b>Lo que '+vb("anotó", "anotaste")+':</b> '+c.notes.slice(-4).reverse().map(x => esc(fmtShort(x.k))+': '+esc(x.t)).join(" · "));
+  return '<div class="cita-sum"><p class="small muted" style="margin:0 0 8px">'+head+'</p>'+
+    '<div class="stats" style="margin-top:0"><div class="stat"><b>'+c.trained+'<small>/'+c.expected+'</small></b><span>días entrenados, de la meta</span></div>'+pt("izquierdo", c.pl)+pt("derecho", c.pr)+'</div>'+
+    '<p class="small muted" style="margin:8px 0 0">'+vb("Registró", "Registraste")+' el dolor '+c.painDays+' de '+c.n+(c.n === 1 ? ' día' : ' días')+(c.painDays < c.n/2 ? ': con tan pocos datos, tómalo con pinzas.' : '.')+'</p>'+
+    '<ul class="citalist">'+li.map(x => '<li>'+x+'</li>').join("")+'</ul>'+changes+'</div>';
+}
+function citaCard(){
+  const lv = lastVisit();
+  return '<h2>Cita con Santiago</h2><div class="item cita">'+
+    '<p class="small" style="margin:0 0 10px">'+(lv ? 'Última cita guardada: <b>'+esc(fmtShort(lv.d))+'</b>.' : 'En la cita, pásale el celular: revisa cada ejercicio y nada cambia hasta que él toque Guardar.')+'</p>'+
+    '<label class="f"><span>Para hablar en la cita</span><textarea id="cita-notes" placeholder="Ej: el de halar peso con la toalla no me gustó; me duele al girar llaves">'+esc(state.citaNotes || "")+'</textarea></label>'+
+    '<button class="btn block" data-fisio>'+(fisio ? "Seguir la revisión con Santiago" : "Abrir modo fisio")+'</button>'+
+    (fisio ? '<p class="small muted" style="margin:8px 0 0">Hay una revisión sin guardar.</p>' : '')+'</div>';
+}
+function newFisio(){ return {ex: {}, adds: [], goal: state.weeklyGoal, loadRule: "", gnote: "", screen: "list", t: Date.now()}; }
+const fx = id => fisio.ex[id] = fisio.ex[id] || {};
+function ftarget(sc, id){ return sc === "x" ? fx(id) : sc === "a" ? fisio.adds.find(a => a.tid === id) : fisio; }
+function fisioOrder(){
+  const out = [], seen = new Set();
+  state.sessions.forEach(s => s.items.forEach(id => { const e = exById(id); if (e && !e.retired && !seen.has(id)){ seen.add(id); out.push(e); } }));
+  activeEx().forEach(e => { if (!seen.has(e.id)) out.push(e); });
+  return out;
+}
+function initAdj(x, e){ if (x.sets === undefined){ x.sets = e.sets || null; x.reps = e.reps || null; x.unit = e.unit || "reps"; x.perArm = !!e.perArm; x.load = e.load || ""; x.note = x.note || ""; } }
+function fEditor(sc, id, v, isAdd){
+  const stp = (f, label) => '<div class="fstep"><span>'+label+'</span><div class="stepper sm"><button data-fs="'+sc+':'+id+':'+f+':-1" aria-label="Menos: '+label+'">−</button><b>'+(v[f] || "–")+'</b><button data-fs="'+sc+':'+id+':'+f+':1" aria-label="Más: '+label+'">+</button></div></div>';
+  const sessOpts = isAdd ? state.sessions.map((s,i) => '<option value="'+s.id+'"'+(v.sess === s.id ? " selected" : "")+'>Sesión '+letter(i)+': '+esc(s.name)+' ('+s.items.length+')</option>').join("")+'<option value=""'+(!v.sess ? " selected" : "")+'>Ninguna por ahora</option>' : '';
+  return '<div class="fedit">'+
+    (isAdd ? '<label class="f"><span>Nombre</span><input type="text" data-fi="a:'+id+':name" value="'+esc(v.name)+'" placeholder="Ej: enrollador de muñeca"></label>'+
+      '<label class="f"><span>Zona</span><select data-fi="a:'+id+':zone">'+ZONES.map(z => '<option'+(z === v.zone ? " selected" : "")+'>'+z+'</option>').join("")+'</select></label>' : '')+
+    '<div class="grid2">'+stp("sets", "Series")+stp("reps", v.unit === "seg" ? "Segundos" : "Repeticiones")+'</div>'+
+    '<div class="toggles" style="margin-top:12px"><button class="tog'+(v.unit === "seg" ? " on" : "")+'" data-ft="'+sc+':'+id+':unit" aria-pressed="'+(v.unit === "seg")+'">Se mide en segundos</button>'+
+    '<button class="tog'+(v.perArm ? " on" : "")+'" data-ft="'+sc+':'+id+':perArm" aria-pressed="'+!!v.perArm+'">Cada brazo por separado</button></div>'+
+    '<label class="f" style="margin-top:12px"><span>Carga</span><input type="text" data-fi="'+sc+':'+id+':load" value="'+esc(v.load || "")+'" placeholder="Ej: 2 kg, banda grande, sin peso"></label>'+
+    (isAdd ? '<label class="f"><span>Va en</span><select data-fi="a:'+id+':sess">'+sessOpts+'</select></label>' : '')+
+    '<label class="f" style="margin-bottom:0"><span>'+(isAdd ? "Cómo se hace" : "Indicación para Leo (opcional)")+'</span><textarea data-fi="'+sc+':'+id+':note" placeholder="'+(isAdd ? "Ej: sube enrollando la cuerda y baja despacio" : "Ej: baja más lento, en 4 segundos")+'">'+esc(v.note || "")+'</textarea></label></div>';
+}
+function fisioCard(e){
+  const d = fisio.ex[e.id] || {}, c = fisio.cd || {}, lt = lastTime(e), used = usedIn(e), src = d.src || e.src, nMedia = (e.media || []).length;
+  const seg = (attr, v, label, on) => '<button class="seg'+(on ? " on" : "")+'" data-'+attr+'="'+e.id+':'+v+'" aria-pressed="'+!!on+'">'+label+'</button>';
+  const lastTxt = lt ? 'Última vez ('+esc(fmtShort(lt.k))+'): '+[lt.reps.length ? esc(fmtReps(e, lt.reps))+(e.unit === "seg" ? " s" : "")+(e.perArm ? " (der/izq)" : "") : "", lt.load ? esc(lt.load) : "", lt.effort ? esc(effortTxt(lt.effort).replace("pudiste", "pudo")) : ""].filter(Boolean).join(", ")+'.' : 'Todavía no lo ha registrado.';
+  const doneN = (c.done || {})[e.id] || 0;
+  return '<div class="fc'+(d.dec ? " "+d.dec : "")+'" id="fc-'+e.id+'">'+
+    '<div class="fchead"><div><b class="fcn">'+esc(e.name)+'</b><span class="small muted">'+esc(e.zone || "")+(used.length ? ' · Sesión '+used.join(" y ") : ' · Fuera de las sesiones')+'</span></div>'+
+      '<div class="fthumb" aria-hidden="true">'+thumbInner(e)+'</div></div>'+
+    '<p class="fcrx">'+esc(rx(e) || "Sin dosis definida")+(e.perArm ? '<span class="small muted"> · cada brazo</span>' : '')+'</p>'+
+    '<p class="small muted" style="margin:0">'+lastTxt+(c.n ? ' Lo hizo '+doneN+(doneN === 1 ? ' vez' : ' veces')+(lastVisit() ? ' desde la última cita.' : ' en las últimas 3 semanas.') : '')+'</p>'+
+    (e.pNote ? '<p class="small fprev">Tu indicación del '+esc(fmtShort(e.pNoteD || key(new Date())))+': '+esc(e.pNote)+'</p>' : '')+
+    '<div class="fq"><span class="lbl">¿Este se lo pusiste tú?</span><div class="segs two" role="group">'+seg("fsrc", "s", "Sí, es mío", src === "s")+seg("fsrc", "ai", "No, es sugerido", src === "ai")+'</div>'+
+      (LEO_CREE[e.id] && !src ? '<p class="small muted" style="margin:-2px 0 0">Leo cree que este es tuyo.</p>' : '')+'</div>'+
+    '<div class="fq"><span class="lbl">¿Cómo queda?</span><div class="segs three" role="group">'+seg("fdec", "ok", "Va así", d.dec === "ok")+seg("fdec", "adj", "Ajustar", d.dec === "adj")+seg("fdec", "rm", "Quitar", d.dec === "rm")+'</div></div>'+
+    (d.dec === "adj" ? fEditor("x", e.id, d, false) : '')+
+    (d.dec === "rm" ? '<p class="small fwarn">Se quita de la rutina al guardar. Sus registros no se borran.</p>' : '')+
+    (canMedia() ? '<div class="frow"><button class="btn ghost sm" data-frec="'+e.id+'">Grabarlo en video</button><span class="small muted">'+(nMedia ? nMedia + (nMedia === 1 ? " guardado" : " guardados") : "")+'</span></div>'+(fisio.rec === e.id ? '<p class="upl" id="mstatus" role="status"></p>' : '') : '')+
+    '</div>';
+}
+function addCard(a){
+  return '<div class="fc adj" id="fa-'+a.tid+'"><div class="fchead"><b class="fcn">'+esc(a.name || "Ejercicio nuevo")+'</b><button class="icon-btn" data-fdel="'+a.tid+'">Quitar</button></div>'+
+    (a.hint ? '<p class="small muted" style="margin:4px 0 0">'+esc(a.hint)+'</p>' : '')+fEditor("a", a.tid, a, true)+'</div>';
+}
+function fisioGen(){
+  return '<div id="fgen"><div class="fstep"><span>Días por semana</span><div class="stepper sm"><button data-fs="g::goal:-1" aria-label="Menos días">−</button><b>'+fisio.goal+'</b><button data-fs="g::goal:1" aria-label="Más días">+</button><span class="muted">Hoy la meta es '+state.weeklyGoal+'</span></div></div>'+
+    '<label class="f" style="margin-top:14px"><span>¿Cuándo debería subir la carga?</span><textarea data-fi="g::loadRule" placeholder="Ej: cuando haga todas las series con dolor de 3 o menos durante 2 semanas">'+esc(fisio.loadRule)+'</textarea></label>'+
+    '<label class="f"><span>Algo más para Leo</span><textarea data-fi="g::gnote" placeholder="Opcional">'+esc(fisio.gnote)+'</textarea></label></div>';
+}
+function fisioBar(){
+  const act = fisioOrder(), n = act.filter(e => fisio.ex[e.id] && fisio.ex[e.id].dec).length;
+  return '<span id="fbar-t"><b>'+n+' de '+act.length+'</b> revisados</span><button class="btn" data-fsum>Revisar y guardar</button>';
+}
+function updateFisioBar(){ const b = $("#fbar"); if (b) b.innerHTML = fisioBar(); }
+function redrawCard(id){ const el = document.getElementById("fc-"+id), e = exById(id); if (el && e) el.outerHTML = fisioCard(e); updateFisioBar(); }
+function redrawScope(sc, id){
+  if (sc === "x") redrawCard(id);
+  else if (sc === "a"){ const el = document.getElementById("fa-"+id), a = ftarget("a", id); if (el && a) el.outerHTML = addCard(a); }
+  else { const el = $("#fgen"); if (el) el.outerHTML = fisioGen(); }
+}
+function drawFisio(){
+  if (!fisio) fisio = newFisio();
+  stopAnim(); detailId = null;
+  if (fisio.screen === "sum"){ drawFisioSum(); return; }
+  fisio.cd = citaData();
+  const act = fisioOrder(), notes = (state.citaNotes || "").trim();
+  const hasRoll = fisio.adds.some(a => /enrollador/i.test(a.name || "")) || state.exercises.some(e => /enrollador/i.test(e.name || ""));
+  const html = '<div class="sh"><div><h3>Modo fisio</h3><p class="muted small" style="margin:4px 0 0">Revisión de la rutina de Leo</p></div><button class="btn ghost sm" data-close>Salir</button></div>'+
+    '<p class="lead">Hola, Santiago. Esta es la rutina que Leo hace en casa con esta app. Algunos ejercicios son tuyos; otros los armó con ayuda de una IA (Claude) a partir de protocolos comunes para epicondilitis, así que vale la pena revisarlos con más cuidado.</p>'+
+    '<p class="small muted">Nada cambia hasta que toques Guardar al final. En casa tiene '+EQUIP+'.</p>'+
+    '<h4>Cómo le ha ido</h4>'+citaHtml("s")+
+    (notes ? '<h4>Leo quiere hablar de</h4><p class="leonotes">'+esc(notes)+'</p>' : '')+
+    '<h4>Ejercicios ('+act.length+')</h4>'+act.map(fisioCard).join("")+
+    '<h4>Agregar un ejercicio</h4>'+fisio.adds.map(addCard).join("")+
+    '<div class="row">'+(hasRoll ? '' : '<button class="btn ghost" data-fadd="roll">+ Enrollador de muñeca</button>')+'<button class="btn ghost" data-fadd="new">+ Otro ejercicio</button></div>'+
+    '<h4>Preguntas generales</h4>'+fisioGen()+
+    '<div class="row" style="margin-top:6px"><button class="icon-btn" data-fdiscard>Descartar esta revisión</button></div>'+
+    '<input type="file" id="fmfile" accept="video/*" capture="environment" hidden>'+
+    '<div class="fbar" id="fbar">'+fisioBar()+'</div>';
+  openSheet(html, "[data-close]");
+  const sh = $("#sheet"); sh.classList.add("full"); fisioOn = true;
+  if (fisio.scroll){ sh.scrollTop = fisio.scroll; fisio.scroll = 0; }
+}
+const fVals = (e, d) => Object.assign({}, e, {sets: d.sets || null, reps: d.reps || null, unit: d.unit || "reps", perArm: !!d.perArm, load: (d.load || "").trim()});
+function fisioChanges(){
+  const out = [], srcTxt = v => v === "s" ? " (de Santiago)" : " (sugerido)";
+  for (const e of fisioOrder()){
+    const d = fisio.ex[e.id]; if (!d) continue;
+    const st = d.src && d.src !== e.src ? srcTxt(d.src) : "";
+    if (d.dec === "ok") out.push("Va así: " + e.name + st);
+    else if (d.dec === "rm") out.push("Se quita: " + e.name + st);
+    else if (d.dec === "adj"){
+      const n = fVals(e, d), parts = [], a = rx(e), b = rx(n);
+      if (a !== b) parts.push((a || "sin dosis") + " → " + (b || "sin dosis"));
+      if (!!n.perArm !== !!e.perArm) parts.push(n.perArm ? "cada brazo por separado" : "los dos brazos a la vez");
+      if ((d.note || "").trim()) parts.push("indicación: " + d.note.trim());
+      out.push("Ajuste en " + e.name + st + ": " + (parts.join("; ") || "sin cambios, queda confirmado"));
+    }
+    else if (st) out.push(e.name + ":" + st.replace(/[()]/g, ""));
+  }
+  for (const a of fisio.adds){ if (!(a.name || "").trim()) continue; const s = sessById(a.sess), r = rx(fVals({}, a));
+    out.push("Nuevo: " + a.name.trim() + (r ? " (" + r + ")" : "") + (s ? " en " + sessLabel(s) : ", fuera de las sesiones")); }
+  if (fisio.goal !== state.weeklyGoal) out.push("Días por semana: " + state.weeklyGoal + " → " + fisio.goal);
+  return out;
+}
+function drawFisioSum(){
+  const ch = fisioChanges(), act = fisioOrder(), undec = act.filter(e => !(fisio.ex[e.id] && fisio.ex[e.id].dec)).length;
+  const sessRows = state.sessions.map((s, i) => {
+    const items = s.items.map(exById).filter(e => e && !e.retired && !(fisio.ex[e.id] && fisio.ex[e.id].dec === "rm"))
+      .map(e => fisio.ex[e.id] && fisio.ex[e.id].dec === "adj" ? fVals(e, fisio.ex[e.id]) : e)
+      .concat(fisio.adds.filter(a => (a.name || "").trim() && a.sess === s.id).map(a => fVals({art: ""}, a)));
+    const min = Math.max(1, Math.round(items.reduce((t, e) => t + exSec(e), 0)/60));
+    return '<li>Sesión '+letter(i)+' ('+esc(s.name)+'): '+(items.length ? items.length+(items.length === 1 ? ' ejercicio' : ' ejercicios')+', unos '+min+' minutos' : '<b class="warn">queda sin ejercicios</b>')+'</li>';
+  }).join("");
+  openSheet('<div class="sh"><div><h3>Antes de guardar</h3><p class="muted small" style="margin:4px 0 0">Revisa que esto sea lo que querías.</p></div><button class="btn ghost sm" data-fback>Volver</button></div>'+
+    (ch.length ? '<ul class="citalist">'+ch.map(x => '<li>'+esc(x)+'</li>').join("")+'</ul>' : '<p>No cambiaste nada. Si guardas, igual queda registrada la fecha de la cita.</p>')+
+    (fisio.loadRule.trim() ? '<p class="small"><b>Para subir carga:</b> '+esc(fisio.loadRule.trim())+'</p>' : '')+
+    (fisio.gnote.trim() ? '<p class="small"><b>Para Leo:</b> '+esc(fisio.gnote.trim())+'</p>' : '')+
+    (undec ? '<p class="small hintline" style="margin:10px 0 0;padding:8px 10px">'+(undec === 1 ? 'Queda 1 ejercicio sin revisar: sigue' : 'Quedan '+undec+' ejercicios sin revisar: siguen')+' igual y Leo lo'+(undec === 1 ? '' : 's')+' ve como por confirmar.</p>' : '')+
+    '<h4>Así quedan las sesiones</h4><ul class="citalist">'+sessRows+'</ul>'+
+    '<div class="row" style="margin-top:16px"><button class="btn" data-fsave>Guardar cambios</button><button class="btn ghost" data-fback>Volver</button></div>', "[data-fback]");
+  $("#sheet").classList.add("full"); fisioOn = true;
+}
+function fisioSave(){
+  const tk = key(new Date()), changes = fisioChanges();
+  for (const e of fisioOrder()){
+    const d = fisio.ex[e.id]; if (!d) continue;
+    if (d.src) e.src = d.src;
+    if (d.dec === "ok") e.confirmed = true;
+    else if (d.dec === "rm"){ e.retired = tk; state.sessions.forEach(s => { s.items = s.items.filter(x => x !== e.id); }); }
+    else if (d.dec === "adj"){
+      const n = fVals(e, d), prev = e.load || "";
+      Object.assign(e, {sets: n.sets, reps: n.reps, unit: n.unit, perArm: n.perArm, load: n.load, confirmed: true});
+      if (n.load && n.load !== prev){ e.loadHistory = e.loadHistory || []; const last = e.loadHistory[e.loadHistory.length-1]; if (last && last.d === tk) last.load = n.load; else e.loadHistory.push({d: tk, load: n.load}); }
+      const note = (d.note || "").trim(); if (note){ e.pNote = note; e.pNoteD = tk; }
+    }
+  }
+  for (const a of fisio.adds){
+    const name = (a.name || "").trim(); if (!name) continue;
+    const n = fVals({}, a), e = {id: uid(), name, zone: a.zone || "Otro", art: "", sets: n.sets, reps: n.reps, unit: n.unit, perArm: n.perArm, load: n.load,
+      notes: (a.note || "").trim(), confirmed: true, src: "s", loadHistory: n.load ? [{d: tk, load: n.load}] : [], media: []};
+    state.exercises.push(e); const s = sessById(a.sess); if (s) s.items.push(e.id);
+  }
+  state.weeklyGoal = fisio.goal;
+  state.visits = state.visits || [];
+  state.visits.push({d: tk, changes, loadRule: fisio.loadRule.trim(), note: fisio.gnote.trim()});
+  save(); fisio = null; keepFisio(); closeSheet(); toast("Guardado. Gracias, Santiago");
+}
+
 function viewRutina(){
   let sess = "";
   state.sessions.forEach((s,i) => {
@@ -1497,6 +1751,7 @@ function viewRutina(){
   });
   let lib = "";
   for (const e of state.exercises){
+    if (e.retired) continue;
     const used = state.sessions.filter(s => s.items.includes(e.id)).map(s => letter(state.sessions.indexOf(s))).join(", ");
     const hist = (e.loadHistory || []).slice(-4).map(h => esc(h.load) + " (" + fmtShort(h.d) + ")").join(" → ");
     const nMedia = (e.media || []).length;
@@ -1507,9 +1762,13 @@ function viewRutina(){
       (hist ? '<div class="hist">Carga: '+hist+'</div>' : '') +
       ((lt => lt && (lt.reps.length || lt.effort) ? '<div class="hist">Última vez, '+esc(fmtShort(lt.k))+': '+esc(fmtReps(e, lt.reps))+(lt.reps.length && e.unit === "seg" ? ' s' : '')+(lt.reps.length && e.perArm ? ' (der/izq)' : '')+(lt.effort ? (lt.reps.length ? ', ' : '')+esc(EFFORT[lt.effort-1].toLowerCase()) : '')+'</div>' : '')(lastTime(e))) +
       (loadNudge(e) ? '<span class="tag go">Listo para subir carga</span> ' : '') +
+      (e.src === "s" ? '<span class="tag src">De Santiago</span> ' : e.src === "ai" ? '<span class="tag">Sugerido</span> ' : '') +
       (!e.confirmed ? '<span class="tag pend">Por confirmar con Santiago</span>' : '') + '</div></div></div>';
   }
+  const gone = state.exercises.filter(e => e.retired);
+  if (gone.length) lib += '<p class="small muted">Quitados en citas: '+gone.map(e => esc(e.name)+' ('+esc(fmtShort(e.retired))+')').join(", ")+'. Si quieres volver a uno, agrégalo desde Editar en una sesión.</p>';
   return '<h1>Tu rutina.</h1><p class="muted" style="margin-top:-6px">Las sesiones rotan solas: cada día te toca la siguiente a la última que hiciste, así un día perdido no te desordena.</p>'+
+    citaCard()+
     '<h2>Sesiones</h2>'+sess+'<button class="btn ghost block" data-addsess>Agregar sesión</button>'+
     '<h2>Ejercicios</h2><p class="small muted" style="margin-top:0">Cuando Santiago te confirme uno, márcalo. Si te da otro, agrégalo: queda en una sesión y puedes grabarlo.</p>'+lib+
     '<button class="btn block" data-add>Agregar ejercicio</button>'+
@@ -1573,7 +1832,7 @@ let sheetOpen = false, sheetHideT = 0, sheetClosedAt = 0;
 function openSheet(html, focusSel){
   const sc = $("#scrim"), sh = $("#sheet"), was = sheetOpen && sc.classList.contains("open");
   const oldH = was && sh.querySelector("h3") ? sh.querySelector("h3").textContent : null, oldTop = sh.scrollTop;
-  clearTimeout(sheetHideT);
+  clearTimeout(sheetHideT); fisioOn = false; sh.classList.remove("full");
   sh.innerHTML = '<div class="grab" aria-hidden="true"></div>' + html;
   sheetOpen = true; sc.hidden = false;
   const same = was && oldH !== null && sh.querySelector("h3") && sh.querySelector("h3").textContent === oldH;
@@ -1585,7 +1844,7 @@ function openSheet(html, focusSel){
   if (f) try { f.focus({preventScroll: true}); } catch(e){ f.focus(); }
 }
 function closeSheet(){
-  stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; guideFrom = null;
+  stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; guideFrom = null; fisioOn = false;
   const sc = $("#scrim"), sh = $("#sheet"), wasOpen = sheetOpen;
   sheetOpen = false; sc.classList.remove("open"); sheetClosedAt = wasOpen ? Date.now() : 0;
   clearTimeout(sheetHideT);
@@ -1628,6 +1887,7 @@ window.addEventListener("popstate", () => {
     if (backTo){ draft = backTo.draft; backTo = null; drawSession(); }
     else if (formFrom){ const id = formFrom; formFrom = null; openDetail(id); }
     else if (guideFrom){ const g = guideFrom; guideFrom = null; editDaySheet(g.key, g); }
+    else if (fisioOn && fisio && fisio.screen === "sum"){ fisio.screen = "list"; drawFisio(); }
     else closeSheet();
   } else if (tab !== "hoy"){ goTab("hoy"); }
   syncNav();
@@ -1660,6 +1920,7 @@ function drawDetail(){
   html += '<div class="flow" id="flow" hidden></div>';
   if (loadNudge(e)) html += '<div class="nudge"><b>Podrías estar listo para más carga.</b> Llevas dos semanas haciéndolo con dolor bajo. Pregúntale a Santiago antes de subir.'+
     '<div class="row" style="margin-top:8px"><button class="btn sm" data-edit="'+e.id+'">Ya la subí</button><button class="btn ghost sm" data-snooze="'+e.id+'">Recordarme en una semana</button></div></div>';
+  if (e.pNote) html += '<h4>Indicación de Santiago</h4><p class="fprev" style="padding:8px 12px">'+esc(e.pNote)+' <span class="small muted">('+esc(fmtShort(e.pNoteD || key(new Date())))+')</span></p>';
   if (e.notes) html += '<h4>Cómo se hace</h4><p>'+esc(e.notes)+'</p>';
   html += '<h4>Tus fotos y videos</h4>' + mediaHtml(e);
   html += '<div class="row" style="margin-top:20px"><button class="btn ghost" data-edit="'+e.id+'">Editar ejercicio</button></div>';
@@ -1855,6 +2116,7 @@ async function handleFile(file, exId){
     e.media = e.media || []; e.media.push({id: r.id, kind, d: key(new Date())}); save();
     toast(kind === "video" ? "Video guardado" : "Foto guardada");
     if (detailId === exId && sheetOpen) drawDetail();
+    else if (fisioOn && fisio){ fisio.rec = null; redrawCard(exId); }
   } catch(err){ say(mediaError(err), true); if (btn) btn.disabled = false; }
 }
 
@@ -1883,6 +2145,27 @@ document.addEventListener("click", ev => {
   if (!t){ if (ev.target === $("#scrim")) closeSheet(); return; }
   const d = t.dataset;
   if (d.tab){ goTab(d.tab); return; }
+  if (d.fisio !== undefined){ if (!fisio) fisio = newFisio(); fisio.screen = "list"; keepFisio(); drawFisio(); return; }
+  if (d.fdec || d.fsrc){ const [id, v] = (d.fdec || d.fsrc).split(":"), x = fx(id), f = d.fdec ? "dec" : "src";
+    x[f] = x[f] === v ? undefined : v; if (x.dec === "adj") initAdj(x, exById(id)); keepFisio(); redrawCard(id); return; }
+  if (d.fs){ const [sc, id, f, dl] = d.fs.split(":"), o = ftarget(sc, id); if (!o) return;
+    const step = f === "reps" && o.unit === "seg" ? 5 : 1, lo = f === "goal" ? 1 : 0, hi = f === "goal" ? 7 : f === "sets" ? 10 : 300;
+    o[f] = Math.max(lo, Math.min(hi, (Number(o[f]) || 0) + Number(dl)*step)) || (f === "goal" ? 1 : null); keepFisio(); redrawScope(sc, id); return; }
+  if (d.ft){ const [sc, id, f] = d.ft.split(":"), o = ftarget(sc, id); if (!o) return;
+    if (f === "unit") o.unit = o.unit === "seg" ? "reps" : "seg"; else o[f] = !o[f]; keepFisio(); redrawScope(sc, id); return; }
+  if (d.fadd){ const fewest = state.sessions.length ? state.sessions.reduce((a, b) => b.items.length < a.items.length ? b : a).id : "";
+    const roll = d.fadd === "roll", a = {tid: uid(), name: roll ? "Enrollador de muñeca" : "", zone: "Antebrazo", sets: null, reps: null, unit: "reps", perArm: false,
+      load: roll ? "Palo con una cuerda y un disco colgando" : "", note: "", sess: fewest, hint: roll ? "Leo cuenta que le pusiste uno con un palo, una cuerda y un peso. Ajusta la dosis." : ""};
+    fisio.adds.push(a); keepFisio(); fisio.scroll = $("#sheet").scrollTop; drawFisio();
+    const el = document.getElementById("fa-" + a.tid); if (el){ el.scrollIntoView({block: "center"}); if (!roll){ const i = el.querySelector("input"); if (i) i.focus({preventScroll: true}); } } return; }
+  if (d.fdel){ fisio.adds = fisio.adds.filter(a => a.tid !== d.fdel); keepFisio(); fisio.scroll = $("#sheet").scrollTop; drawFisio(); return; }
+  if (d.frec){ fisio.rec = d.frec; redrawCard(d.frec); const f = $("#fmfile"); if (f){ f.value = ""; f.click(); } return; }
+  if (d.fsum !== undefined){ fisio.scroll = $("#sheet").scrollTop; fisio.screen = "sum"; keepFisio(); drawFisio(); return; }
+  if (d.fback !== undefined){ fisio.screen = "list"; keepFisio(); drawFisio(); return; }
+  if (d.fsave !== undefined){ fisioSave(); return; }
+  if (d.fdiscard !== undefined){
+    if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez: se pierde lo que marcaste"; return; }
+    fisio = null; keepFisio(); closeSheet(); toast("Revisión descartada"); return; }
   if (d.go){ if (sheetOpen) closeSheet(); goTab(d.go); return; }
   if (d.pick){ const log = ensureLog(key(new Date())); log.session = d.pick; save(); render(); return; }
   if (d.med){ const dr = drOf(t); dr[d.med] = !dr[d.med]; t.classList.toggle("on", dr[d.med]); t.setAttribute("aria-pressed", String(dr[d.med])); touched(t); return; }
@@ -1982,6 +2265,7 @@ document.addEventListener("click", ev => {
     const name = (draft.name || "").trim(); if (!name){ $("#s-name").focus(); toast("Ponle nombre a la sesión"); return; }
     if (draft.id){ const s = sessById(draft.id); s.name = name; s.items = draft.items.slice(); }
     else state.sessions.push({id: uid(), name, items: draft.items.slice()});
+    draft.items.forEach(x => { const e = exById(x); if (e && e.retired) delete e.retired; });
     save(); closeSheet(); return;
   }
   if (d.delsess){
@@ -2025,12 +2309,15 @@ document.addEventListener("click", ev => {
 document.addEventListener("input", ev => {
   const tg = ev.target, f = tg.dataset && tg.dataset.pain;
   if (f){ setPainDraft(f, tg.value, tg); return; }
+  if (tg.dataset && tg.dataset.fi && fisio){ const [sc, id, fl] = tg.dataset.fi.split(":"), o = ftarget(sc, id); if (o){ o[fl] = tg.value; keepFisio(); } return; }
+  if (tg.id === "cita-notes"){ state.citaNotes = tg.value; save(); return; }
   if (tg.dataset && tg.dataset.note !== undefined){ drOf(tg).note = tg.value; touched(tg); }
 });
 document.addEventListener("change", ev => {
   const tg = ev.target;
   if (tg.id === "bundle"){ state.bundle = tg.value.trim(); save(); toast(state.bundle ? "Listo: te lo recuerdo al empezar" : "Recordatorio sin nombre"); return; }
   if (tg.id === "f-seg"){ $("#f-reps-l").textContent = tg.checked ? "Segundos" : "Repeticiones"; return; }
+  if (tg.id === "fmfile" && tg.files && tg.files[0] && fisio && fisio.rec){ handleFile(tg.files[0], fisio.rec); return; }
   if (tg.id === "mfile" && tg.files && tg.files[0] && detailId){ handleFile(tg.files[0], detailId); return; }
   if (tg.id === "bfile" && tg.files && tg.files[0]){ readBackup(tg.files[0]); return; }
 });

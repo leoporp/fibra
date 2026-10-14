@@ -31,6 +31,7 @@ Este archivo es el traspaso entre chats: léelo completo antes de tocar algo.
 - `sessions[]`: `{id, name, items[ids]}`; rotan solas (toca la siguiente a la última hecha).
 - `logs["AAAA-MM-DD"]`: `done{id:true}`, `sets{id:n}`, `reps{id:[n por serie, der/izq alternado]}`, `loads{id:texto}`, `effort{id:1..4}`, `session`, `painL`, `painR` (0–10), `ice`, `heat`, `breaks` (0 = no aplica, 1–5), `note`, `savedAt`.
 - También: `rewards[]` (solo las que él cree), `spends[]` y `fundStart` (fondo), `bundle` (audiolibro), `painView` ("max"|"arms"), `weeklyGoal` (4), `restSec` (60).
+- Citas con Santiago: `visits[{d, changes[texto], loadRule, note}]`, `citaNotes` (lo que Leo quiere hablar). En ejercicios: `src` ("s" = de Santiago, "ai" = sugerido), `retired` (fecha en que Santiago lo quitó; sale de las sesiones pero conserva registros), `pNote`/`pNoteD` (indicación de Santiago). El borrador del modo fisio vive solo en el dispositivo (`fibra-fisio`).
 - Para cambiar datos de usuarios existentes: agrega una bandera nueva en `migrate()` (como `setsV6`, `equipV7`, `fundV8`), sube `v`, `blank()` y `CUR_V`, y no pises lo que él haya personalizado.
 
 ## Decisiones ya tomadas (y por qué)
@@ -47,6 +48,9 @@ Este archivo es el traspaso entre chats: léelo completo antes de tocar algo.
 - **Identidad visual**: "hebras que se ordenan". Acento óxido `#9A3F27` (oscuro `#E58A68`) y ámbar `--fiber`. Las fibras de Hoy se enderezan al marcar (transición CSS de `d`, que funciona en Chrome) y al completar la sesión pulsan con un brillo.
 - **Movimiento**: transiciones equilibradas (0,2 a 0,4 s): hojas que suben y se cierran deslizando hacia abajo, pestañas con View Transitions e íconos de hebra, rebotes al tocar. Se respeta la opción de reducir animaciones. **Sin vibración** (lo pidió así).
 - **Botón atrás de Android**: una entrada de historial protege hojas abiertas y pestañas distintas de Hoy (`syncNav`).
+- **Modo fisio** (Rutina → Cita con Santiago): Santiago revisa en el celular de Leo durante la cita, no con cuenta propia (se descartó por ahora: le pediría trabajo fuera de la cita, implica compartir datos de salud y la edición simultánea choca con el JSON único). Él toca el celular, así que todo es grande y sin jerga. Por ejercicio: "¿Este se lo pusiste tú?" y Va así / Ajustar / Quitar (dosis, carga, por brazo, indicación para Leo); puede agregar ejercicios (atajo para el enrollador de muñeca, que Leo dice que él le puso) y cambiar los días por semana. No puede tocar calentamiento ni guía de dolor (decisión de Leo). Nada cambia hasta "Guardar"; salir o el botón atrás no pierden lo marcado. Arriba le muestra "Cómo le ha ido" y que parte de la rutina se armó con IA (Leo está de acuerdo en decírselo).
+- **Resumen desde la última cita**: en el modo fisio y en Progreso (debajo de la gráfica, que debe seguir siendo lo primero). Sin citas guardadas usa las últimas 3 semanas.
+- Lo que Leo recuerda de Santiago: isométrico de extensores, extensión de dedos contra la otra mano, varios con banda elástica, tríceps (no recuerda cuáles), el enrollador y uno de halar peso con toalla que odió. Por eso los demás quedan para que Santiago los marque.
 - **No se puede**: notificaciones o recordatorios (es una web app, sin servidor de push). Leo no quiso recordatorio externo por ahora.
 
 ## Pruebas
@@ -56,6 +60,7 @@ Este archivo es el traspaso entre chats: léelo completo antes de tocar algo.
 
 ## Pendiente o por confirmar
 
-- Que Leo le mande a Santiago el mensaje de Rutina y confirme rutina, dosis, cargas, calentamiento y la guía de dolor.
+- Después de la primera cita con el modo fisio, preguntarle a Leo cómo le fue y ajustar. Calentamiento y guía de dolor siguen sin confirmar.
+- Posible siguiente paso, solo si Santiago muestra interés tras 2 o 3 citas: acceso propio para él. Ampliarlo a sus pacientes sería otro proyecto (muchos usuarios y datos de salud de terceros).
 - Verificar que en Supabase esté apagado "Allow new users to sign up" después de que Leo creó su cuenta.
 - Si el ícono viejo sigue en Android: desinstalar y reinstalar la app desde Chrome (sus datos están en la nube).
