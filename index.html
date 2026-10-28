@@ -1566,6 +1566,8 @@ function viewProgreso(){
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
     '<h2>Dolor y constancia, 28 días</h2>'+painHtml()+insight()+
     '<h2>Desde la última cita</h2>'+citaHtml("l")+
+    '<h2>Segunda opinión</h2><p class="small muted" style="margin-top:0">Copia tus últimas 4 semanas (rutina, cargas, dolor y notas) y pégalas en tu proyecto de Claude. Lo que te diga, confírmalo con Santiago.</p>'+
+    '<div class="row"><button class="btn ghost" data-aicopy>Copiar para Claude</button></div>'+
 
     '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
     fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
@@ -1588,6 +1590,53 @@ function santiagoText(){
       ". Hielo " + hs.ice + (hs.ice === 1 ? " día" : " días") + ", calor " + hs.heat + (hs.heat === 1 ? " día" : " días") + (hs.breaks !== null ? ", pausas activas " + f1c(hs.breaks) + " de 5" : "") + ".\n\n";
   }
   t += "También quería preguntarte cada cuánto debería subir la carga. Y en la próxima sesión, ¿te puedo grabar haciendo los ejercicios? Así no se me olvida cómo van.";
+  return t;
+}
+/* ---------- resumen para analizar en un chat de Claude (últimas 4 semanas) ---------- */
+const AI_DAYS = 28;
+function aiText(){
+  const today = new Date(), tk = key(today), from = key(addDays(today, -(AI_DAYS-1)));
+  const dl = k => parseKey(k).toLocaleDateString("es-CO", {weekday:"short", day:"numeric", month:"short"}).replace(/\./g, "");
+  let t = "Datos de Fibra para analizar. Hoy es " + dl(tk) + " (" + tk + "). Periodo: últimas 4 semanas (" + from + " a " + tk + ").\n\n";
+  t += "## Rutina actual\nMeta: " + state.weeklyGoal + " días por semana (un día cuenta si hago al menos la mitad de la sesión). Las sesiones rotan: cada día toca la siguiente a la última hecha.\n";
+  state.sessions.forEach((ss, i) => { t += "Sesión " + letter(i) + " (" + ss.name + "): " + ss.items.map(exById).filter(Boolean).map(e => e.name).join(", ") + "\n"; });
+  t += "\nEjercicios:\n";
+  state.exercises.filter(e => !e.retired && state.sessions.some(ss => ss.items.includes(e.id))).forEach(e => {
+    const hist = (e.loadHistory || []).slice(-4).map(h => h.load + " (" + h.d + ")").join(" → ");
+    const inS = state.sessions.filter(ss => ss.items.includes(e.id)).map(ss => letter(state.sessions.indexOf(ss))).join(", ");
+    t += "- " + e.name + (rx(e) ? ": " + rx(e) : "") + (e.perArm ? ", por brazo" : "") + ". Sesiones " + inS +
+      ". Origen: " + (e.src === "s" ? "Santiago" : e.src === "ai" ? "sugerido por IA" : "sin marcar") + (e.confirmed ? ", confirmado" : ", por confirmar con Santiago") +
+      (hist ? ". Historial de carga: " + hist : "") + (e.pNote ? ". Indicación de Santiago: " + e.pNote : "") + "\n";
+  });
+  const gone = state.exercises.filter(e => e.retired);
+  if (gone.length) t += "\nQuitados por Santiago: " + gone.map(e => e.name + " (" + e.retired + ")").join(", ") + "\n";
+  const lv = lastVisit();
+  t += "\n## Última cita con Santiago\n" + (lv ? lv.d + (lv.changes && lv.changes.length ? ". Cambios: " + lv.changes.join("; ") : "") + (lv.loadRule ? ". Regla para subir carga: " + lv.loadRule : "") + (lv.note ? ". Nota: " + lv.note : "") : "No hay citas guardadas en la app.") + "\n";
+  if ((state.citaNotes || "").trim()) t += "Lo que quiero hablar en la próxima cita: " + state.citaNotes.trim() + "\n";
+  t += "\n## Semanas\n";
+  for (let m = monday(parseKey(from)); key(m) <= tk; m = addDays(m, 7)) t += "- Semana del " + key(m) + ": " + weekCount(m) + " de " + state.weeklyGoal + " días" + (weekMet(m) ? " (cumplida)" : "") + (key(addDays(m, 6)) > tk ? " (en curso)" : "") + "\n";
+  t += "\n## Días\nDolor de 0 a 10 por brazo, de cómo estuvo el día en general (izq/der). Reps por serie (der/izq alternado si es por brazo). Esfuerzo: " + EFFORT.join(", ") + ".\n";
+  let nDays = 0;
+  for (let i = AI_DAYS-1; i >= 0; i--){
+    const k = key(addDays(today, -i)), l = state.logs[k]; if (!l) continue;
+    const st = dayStats(k), sess = l.session ? sessById(l.session) : null, parts = [];
+    if (st.done) parts.push((sess ? "Sesión " + letter(state.sessions.indexOf(sess)) + ", " : "") + st.done + " de " + st.total + " ejercicios");
+    if (typeof l.painL === "number" || typeof l.painR === "number") parts.push("dolor " + (typeof l.painL === "number" ? l.painL : "–") + "/" + (typeof l.painR === "number" ? l.painR : "–"));
+    if (l.ice) parts.push("hielo"); if (l.heat) parts.push("calor");
+    if (typeof l.breaks === "number") parts.push(l.breaks ? "pausas: " + BRK[l.breaks-1].toLowerCase() : "pausas: no aplica");
+    if (!parts.length && !l.note) continue;
+    nDays++;
+    t += "\n" + dl(k) + ": " + (parts.join(", ") || "sin datos") + (l.note ? '. Nota: "' + l.note + '"' : "") + "\n";
+    for (const id of Object.keys(l.done || {}).filter(x => l.done[x])){
+      const e = exById(id); if (!e) continue;
+      const reps = l.reps && l.reps[id], ld = l.loads && l.loads[id], ef = l.effort && l.effort[id], d = [];
+      if (reps && reps.length) d.push(fmtReps(e, reps) + (e.unit === "seg" ? " seg" : " reps"));
+      if (ld) d.push(ld); if (ef) d.push(EFFORT[ef-1].toLowerCase());
+      t += "  - " + e.name + (d.length ? ": " + d.join(", ") : "") + "\n";
+    }
+  }
+  if (!nDays) t += "\nNo hay registros en estas 4 semanas.\n";
+  t += "\nAnaliza mi progreso con lo que dicen tus instrucciones.";
   return t;
 }
 /* ---------- cita con Santiago: resumen desde la última cita y modo fisio ---------- */
@@ -2377,6 +2426,13 @@ document.addEventListener("click", ev => {
     state.rewards = state.rewards.filter(r => r.id !== d.delrw); save(); render(); return;
   }
   if (d.goal){ state.weeklyGoal = Math.min(7, Math.max(1, state.weeklyGoal + Number(d.goal))); save(); render(); return; }
+  if (d.aicopy !== undefined){
+    const txt = aiText(), done = () => toast("Copiado. Pégalo en tu proyecto de Claude");
+    const fallback = () => { const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch(e){} ta.remove(); ok ? done() : toast("No pude copiar. Inténtalo otra vez"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fallback); else fallback();
+    return;
+  }
   if (d.copy !== undefined){
     const ta = $("#msg"), txt = ta.value, done = () => toast("Mensaje copiado");
     const fallback = () => { ta.focus(); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch(e){} ok ? done() : toast("Selecciona el texto y cópialo"); };
