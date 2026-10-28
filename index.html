@@ -1441,6 +1441,9 @@ function chartSvg(){
     data.forEach((d, i) => { const v = d[f]; if (v === null){ if (cur.length) segs.push(cur); cur = []; return; } cur.push([X(i), Y(v)]); });
     if (cur.length) segs.push(cur);
     let out = "";
+    /* días sin dolor anotado: punteado entre el último y el siguiente registro (nunca hacia adelante) */
+    for (let j = 1; j < segs.length; j++){ const a = segs[j-1][segs[j-1].length-1], b = segs[j][0];
+      out += '<line class="gap" x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'" style="stroke:var('+color+')" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 5" opacity=".75"/>'; }
     for (const sg of segs){
       if (sg.length > 1){ out += '<polyline class="pl" points="'+sg.map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")+'" style="fill:none;stroke:var('+color+')" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"'+(dash ? ' stroke-dasharray="6 5"' : '')+'/>'; continue; }
       for (const [cx, cy] of sg) marks += shape === "sq" ? '<rect x="'+(cx-4).toFixed(1)+'" y="'+(cy-4).toFixed(1)+'" width="8" height="8" rx="1.5" style="fill:var('+color+');stroke:var(--surface)" stroke-width="1.5"/>' : '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="4" style="fill:var('+color+');stroke:var(--surface)" stroke-width="1.5"/>';
@@ -1479,6 +1482,12 @@ function chartSvg(){
     '<line id="pday-line" x1="0" x2="0" y1="'+top+'" y2="'+bBase+'" style="stroke:var(--muted)" stroke-width="1" visibility="hidden"/>'+
     '<clipPath id="reveal"><rect class="revealr" x="0" y="0" width="'+W+'" height="'+(base+6)+'"/></clipPath><g clip-path="url(#reveal)">'+lines+'</g>'+labels+'<g id="pday-dots"></g>'+hits+'</svg>';
 }
+function gapLegend(legend){
+  const ms = painSeries().map(d => d.M), f = ms.findIndex(v => v !== null), l = ms.length - 1 - ms.slice().reverse().findIndex(v => v !== null);
+  if (f < 0 || !ms.slice(f, l).some(v => v === null)) return legend;
+  const item = '<span><svg width="26" height="10" aria-hidden="true"><line x1="2" x2="24" y1="5" y2="5" style="stroke:var(--muted)" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 5"/></svg>Días sin anotar</span>';
+  return /<\/div>$/.test(legend) ? legend.replace(/<\/div>$/, item + '</div>') : '<div class="legend">' + item + '</div>' + legend;
+}
 function painDayText(i){
   const d = painSeries()[i], name = parseKey(d.k).toLocaleDateString("es-CO", {weekday:"short", day:"numeric", month:"short"}).replace(/\./g, "");
   const nm = name.charAt(0).toUpperCase() + name.slice(1), st = dayStats(d.k);
@@ -1492,7 +1501,7 @@ function painHtml(){
   const legend = arms ? '<div class="legend"><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armL)" stroke-width="2"/><circle cx="13" cy="5" r="4" style="fill:var(--armL)"/></svg>Izquierdo</span><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armR)" stroke-width="2" stroke-dasharray="5 4"/><rect x="9" y="1" width="8" height="8" rx="1.5" style="fill:var(--armR)"/></svg>Derecho</span></div>'
     : '<p class="small muted" style="margin:6px 0 0">La línea es el brazo que más dolió cada día, no un promedio.</p>';
   return '<div class="segs two" role="group" aria-label="Cómo ver el dolor"><button class="seg'+(arms ? "" : " on")+'" data-painview="max" aria-pressed="'+!arms+'">Brazo que más dolió</button><button class="seg'+(arms ? " on" : "")+'" data-painview="arms" aria-pressed="'+arms+'">Cada brazo</button></div>'+
-    '<div class="chart">'+(hasAny ? chartSvg() + legend + '<p class="small muted" style="margin:4px 0 0">Debajo, con las mismas fechas: cuánto de la sesión hiciste, hielo, calor y pausas activas (más oscuro, mejor; punteado, no aplicaba).</p>'+habitsLine()+'<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
+    '<div class="chart">'+(hasAny ? chartSvg() + gapLegend(legend) + '<p class="small muted" style="margin:4px 0 0">Debajo, con las mismas fechas: cuánto de la sesión hiciste, hielo, calor y pausas activas (más oscuro, mejor; punteado, no aplicaba).</p>'+habitsLine()+'<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
 }
 
 function habitStats(days){

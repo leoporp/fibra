@@ -34,10 +34,13 @@ server.listen(8789,async()=>{
   const ylabels=await p.locator('.chart svg text').evaluateAll(els=>els.map(e=>e.textContent)); console.log(scheme,'svg texts',JSON.stringify(ylabels));
   ok(ylabels.includes('0')&&ylabels.includes('10')&&ylabels.includes('hoy'),'y axis labels present');
   await p.screenshot({path:__dirname+'/shots/'+scheme+'_pain_max.png'});
+  ok(await p.locator('.chart svg line.gap').count()===3,'punteado en los 3 huecos sin dolor anotado');
+  ok(/Días sin anotar/.test(await p.locator('.chart .legend').first().innerText()),'leyenda del punteado');
   // tap a day
   await p.locator('[data-pday="25"]').click({force:true}); await p.waitForTimeout(80);
   const rd=await p.locator('#pday').innerText(); console.log('readout', rd); ok(/izquierdo \d+, derecho/.test(rd),'tap readout');
   await p.locator('[data-painview="arms"]').click(); await p.waitForTimeout(100);
+  ok(await p.locator('.chart svg line.gap').count()===7,'punteado por brazo (der. también le falta un día)');
   ok(await p.locator('[data-painview="arms"]').getAttribute('aria-pressed')==='true','arms toggled');
   const t2=await p.locator('.chart svg text').evaluateAll(els=>els.map(e=>e.textContent)); ok(t2.includes('Izq')&&t2.includes('Der'),'direct labels');
   await p.evaluate(()=>{ const h=[...document.querySelectorAll('h2')].find(x=>x.textContent.startsWith('Dolor')); window.scrollTo(0, h.getBoundingClientRect().top+window.scrollY-10); });
