@@ -29,7 +29,7 @@ server.listen(8793,async()=>{
      if(op==='upsert'){ SRV.db[a[0].user_id]=JSON.parse(JSON.stringify(a[0])); return true; }
      if(op==='get'){ const r=SRV.db[a[0]]; return r?{data:r.data}:null; }
    });
-   const p=await ctx.newPage(); p.on('pageerror',e=>errors.push(e.message)); await p.goto('http://localhost:8793/'); await p.waitForTimeout(300); return p; }
+   const p=await ctx.newPage(); p.on('pageerror',e=>errors.push(e.message)); await p.clock.install({time:new Date('2026-10-10T14:00:00-05:00')}); await p.goto('http://localhost:8793/'); await p.waitForTimeout(300); return p; }
  const auth=async(p,kind)=>{ await p.locator('#sync').click(); await p.locator('#l-email').fill('leo@x.com'); await p.locator('#l-pass').fill('secreto1'); await p.locator(kind==='up'?'[data-signup]':'[data-signin]').click(); await p.waitForTimeout(1500); };
  // phone: has local data from earlier days
  const phone=await device();

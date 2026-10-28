@@ -12,7 +12,7 @@ const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m); if(!c) process.exitCode=1;}
 server.listen(8786,async()=>{
  const b=await chromium.launch(); const errors=[];
  const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage(); p.on('pageerror',e=>errors.push(e.message));
- const back=async()=>{ await p.evaluate(()=>history.back()); await p.waitForTimeout(250); };
+ const back=async()=>{ await p.evaluate(()=>history.back()).catch(()=>{}); await p.waitForTimeout(250); };
  const sheetOpen=()=>p.evaluate(()=>document.querySelector('#scrim').classList.contains('open'));
  const onApp=()=>p.url().startsWith('http://localhost:8786/') && !p.url().endsWith('/start');
  const curTab=()=>p.evaluate(()=>document.querySelector('.tabs [aria-current=page]').dataset.tab);
