@@ -123,6 +123,11 @@ button{cursor:pointer}
 .chkrow.on .box{background:var(--accent);border-color:var(--accent)}
 .chkrow.on .box::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
 .chkrow.on span:last-child{color:var(--muted);text-decoration:line-through}
+.chkrow.pex.on span:last-child{color:var(--ink);text-decoration:none;font-weight:700}
+.pexit{display:flex;flex-direction:column;gap:6px}
+.pexmore{display:flex;flex-direction:column;gap:6px;padding:2px 4px 8px 36px}
+.pexmore input{font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.segs4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .warm{margin:0;padding-left:22px}
 .warm li{margin:0 0 8px;font-size:15px}
 .repctl{display:flex;align-items:center;gap:12px;margin:4px 0 10px}
@@ -1326,7 +1331,37 @@ function logSummary(l){
   return parts.join(" · ");
 }
 const editDirty = () => { const d = editDay, l = state.logs[d.key] || {}, n = v => typeof v === "number" ? v : null;
-  return n(d.painL) !== n(l.painL) || n(d.painR) !== n(l.painR) || !!d.ice !== !!l.ice || !!d.heat !== !!l.heat || n(d.breaks) !== n(l.breaks) || (d.note || "").trim() !== (l.note || "").trim(); };
+  return n(d.painL) !== n(l.painL) || n(d.painR) !== n(l.painR) || !!d.ice !== !!l.ice || !!d.heat !== !!l.heat || n(d.breaks) !== n(l.breaks) || (d.note || "").trim() !== (l.note || "").trim() || pexDirty(); };
+/* exercises of a past day (Leo forgot to mark them that day) */
+function pexInit(k){
+  const l = state.logs[k] || {}, sess = sessionFor(k);
+  return {sess: sess ? sess.id : null, done: Object.assign({}, l.done || {}), loads: Object.assign({}, l.loads || {}), effort: Object.assign({}, l.effort || {})};
+}
+function pexItems(){ const s = editDay && sessById(editDay.ex.sess); return s ? s.items.filter(id => exById(id)) : []; }
+function pexDirty(){
+  const d = editDay; if (!d || !d.ex) return false;
+  const l = state.logs[d.key] || {}, x = d.ex, o = pexInit(d.key);
+  if (x.sess !== o.sess && pexItems().some(id => x.done[id])) return true;
+  return pexItems().some(id => !!x.done[id] !== !!o.done[id] || (x.done[id] && ((x.loads[id] || "").trim() !== (o.loads[id] || "").trim() || (x.effort[id] || 0) !== (o.effort[id] || 0))));
+}
+function pexHtml(){
+  const x = editDay.ex, items = pexItems();
+  let chips = "";
+  state.sessions.forEach((ss,i) => { const on = ss.id === x.sess; chips += '<button class="chip'+(on?" on":"")+'" data-pexpick="'+ss.id+'" aria-pressed="'+on+'"><b>'+letter(i)+'</b> '+esc(ss.name)+'</button>'; });
+  const n = items.filter(id => x.done[id]).length;
+  const rows = items.map(id => { const e = exById(id), on = !!x.done[id];
+    let extra = "";
+    if (on){
+      let segs = ""; EFFORT.forEach((t,i) => { const v = i+1, sel = x.effort[id] === v; segs += '<button class="seg'+(sel?" on":"")+'" data-peff="'+id+':'+v+'" aria-pressed="'+sel+'">'+t+'</button>'; });
+      extra = '<div class="pexmore"><label class="small muted" for="pl-'+id+'">Carga (opcional)</label><input id="pl-'+id+'" data-pload="'+id+'" value="'+esc(x.loads[id] || "")+'" placeholder="'+esc(e.load ? "Ej: " + e.load : "Ej: 3 kg")+'">'+
+        '<span class="small muted">¿Cómo se sintió? (opcional)</span><div class="segs4">'+segs+'</div></div>';
+    }
+    return '<div class="pexit"><button class="chkrow pex'+(on?" on":"")+'" data-pex="'+id+'" aria-pressed="'+on+'"><span class="box" aria-hidden="true"></span><span>'+esc(e.name)+'</span></button>'+extra+'</div>'; }).join("");
+  return '<h4 style="margin:4px 0 8px">Ejercicios de ese día</h4>'+
+    (state.sessions.length > 1 ? '<p class="small muted" style="margin:0 0 6px">¿Qué sesión hiciste?</p><div class="chips">'+chips+'</div>' : '')+
+    (items.length ? '<div class="chklist">'+rows+'</div><p class="small muted" style="margin:8px 0 0">'+(n ? "Marcaste " + n + " de " + items.length + "." : "Toca los que hiciste.")+'</p>' : '<p class="small muted">No tienes sesiones armadas.</p>');
+}
+function drawPex(){ const b = $("#pastex"); if (b) b.innerHTML = pexHtml(); updateEditBar(); }
 function updateEditBar(){ const b = $("#e-save"), st = $("#e-status"); const dt = editDirty(); if (b) b.disabled = !dt; if (st) st.innerHTML = dt ? '<span class="dirty">Cambios sin guardar</span>' : "Sin cambios"; }
 function historyHtml(){
   const today = new Date(), keys = Object.keys(state.logs).sort(), first = keys.length ? keys[0] : key(today);
@@ -1335,7 +1370,8 @@ function historyHtml(){
     const k = key(addDays(today, -i)); if (i >= 7 && k < first) break;
     const l = state.logs[k], st = dayStats(k), sm = logSummary(l);
     const ex = st.total ? (st.done ? st.done + " de " + st.total + " ejercicios" : "") : "";
-    rows += '<button class="dayrow'+(sm ? " on" : "")+'" data-editday="'+k+'"><span><b>'+esc(dayName(k))+'</b><span class="small muted">'+esc(sm || "Sin registro")+(ex ? '<br>'+esc(ex) : '')+'</span></span><span class="small go">'+(sm ? "Editar" : "Agregar")+'</span></button>';
+    const any = sm || ex;
+    rows += '<button class="dayrow'+(any ? " on" : "")+'" data-editday="'+k+'"><span><b>'+esc(dayName(k))+'</b><span class="small muted">'+esc(sm || (ex ? "" : "Sin registro"))+(sm && ex ? '<br>' : '')+esc(ex)+'</span></span><span class="small go">'+(any ? "Editar" : "Agregar")+'</span></button>';
   }
   const more = key(addDays(today, -histDays)) >= first;
   return '<div class="days">'+rows+'</div>'+(more ? '<div class="row"><button class="btn ghost" data-morehist>Ver días anteriores</button></div>' : '');
@@ -1343,9 +1379,10 @@ function historyHtml(){
 function editDaySheet(k, keep){
   if (k === key(new Date())){ tab = "hoy"; regOpen = true; closeSheet(); render(); syncNav(); const sb2 = $("#d-save"); if (sb2) sb2.scrollIntoView({block:"center"}); return; }
   const l = state.logs[k] || {};
-  editDay = keep && keep.key === k ? keep : {key: k, painL: l.painL, painR: l.painR, ice: !!l.ice, heat: !!l.heat, breaks: l.breaks, note: l.note || ""};
-  const st = dayStats(k), has = !!logSummary(l);
-  openSheet('<div class="sh"><div><h3>'+esc(dayName(k))+'</h3><p class="muted small" style="margin:4px 0 0">'+(st.total ? "Ese día hiciste " + st.done + " de " + st.total + " ejercicios." : "Ese día no marcaste ejercicios.")+'</p></div><button class="btn ghost sm" data-close>Cerrar</button></div>'+
+  editDay = keep && keep.key === k ? keep : {key: k, painL: l.painL, painR: l.painR, ice: !!l.ice, heat: !!l.heat, breaks: l.breaks, note: l.note || "", ex: pexInit(k)};
+  const has = !!logSummary(l);
+  openSheet('<div class="sh"><div><h3>'+esc(dayName(k))+'</h3></div><button class="btn ghost sm" data-close>Cerrar</button></div>'+
+    '<div id="pastex" class="pastex">'+pexHtml()+'</div><h4 style="margin:18px 0 8px">Registro del día</h4>'+
     regForm(editDay, "e", editDirty() ? '<span class="dirty">Cambios sin guardar</span>' : "Sin cambios", editDirty(), "Guardar cambios")+
     (has ? '<div class="row" style="margin-top:14px"><button class="btn danger" data-clearday="'+k+'">Borrar el registro de este día</button></div>' : ''), "[data-close]");
 }
@@ -1353,9 +1390,23 @@ function commitEdit(){
   const d = editDay, log = ensureLog(d.key), was = dayStats(d.key).logged;
   ["painL","painR","breaks"].forEach(f => { if (typeof d[f] === "number") log[f] = d[f]; else delete log[f]; });
   log.ice = !!d.ice; log.heat = !!d.heat; log.note = (d.note || "").trim(); log.savedAt = Date.now();
+  const st0 = dayStats(d.key), lv0 = level().n, wk0 = weekMet(monday(parseKey(d.key)));
+  const x = d.ex, items = pexItems();
+  if (x && items.length && (items.some(id => x.done[id]) || log.session)){
+    log.session = x.sess; log.loads = log.loads || {}; log.effort = log.effort || {};
+    for (const id of items){
+      if (x.done[id]){ log.done[id] = true; const ld = (x.loads[id] || "").trim(); if (ld) log.loads[id] = ld; else delete log.loads[id]; if (x.effort[id]) log.effort[id] = x.effort[id]; else delete log.effort[id]; }
+      else { delete log.done[id]; delete log.loads[id]; delete log.effort[id]; if (log.sets) delete log.sets[id]; if (log.reps) delete log.reps[id]; }
+    }
+  }
   save(); const k = d.key; closeSheet();
-  const wd = parseKey(k).toLocaleDateString("es-CO", {weekday:"long"}), yk = key(addDays(new Date(), -1));
-  toast("Registro " + (k === yk ? "de ayer" : "del " + wd) + " guardado" + (!was && dayStats(k).logged ? ". +5" : ""));
+  const st1 = dayStats(k), wd = parseKey(k).toLocaleDateString("es-CO", {weekday:"long"}), yk = key(addDays(new Date(), -1)), when = k === yk ? "de ayer" : "del " + wd;
+  let msg = "Registro " + when + " guardado" + (!was && st1.logged ? ". +5" : "");
+  if (lv0 < level().n) msg = "Subiste a nivel " + level().n + ": " + LEVELS[level().n-1];
+  else if (!wk0 && weekMet(monday(parseKey(k)))) msg = "Meta de esa semana cumplida: +" + money(FUND_WEEK) + " a tu fondo";
+  else if (!st0.counts && st1.counts) msg = (k === yk ? "Ayer" : "El " + wd) + " cuenta como día cumplido: +" + money(FUND_DAY) + " a tu fondo";
+  else if (st1.done !== st0.done) msg = "Ejercicios " + when + " guardados";
+  toast(msg);
 }
 
 function fibersSvg(n){
@@ -2173,6 +2224,9 @@ document.addEventListener("click", ev => {
     t.closest(".pr").querySelectorAll("[data-breaks]").forEach(b => { const on = Number(b.dataset.breaks) === dr.breaks; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); }); touched(t); return; }
   if (d.savelog !== undefined){ if (inSheet(t) && editDay) commitEdit(); else commitDraft(); return; }
   if (d.editday){ editDaySheet(d.editday); return; }
+  if (d.pexpick && editDay){ editDay.ex.sess = d.pexpick; drawPex(); return; }
+  if (d.pex && editDay){ const x = editDay.ex; x.done[d.pex] = !x.done[d.pex]; drawPex(); return; }
+  if (d.peff && editDay){ const [id, v] = d.peff.split(":"), x = editDay.ex, n = Number(v); x.effort[id] = x.effort[id] === n ? 0 : n; drawPex(); return; }
   if (d.painguide !== undefined){ painGuide(); return; }
   if (d.regopen !== undefined){ regOpen = true; regAnim = true; render(); regAnim = false; const f = $("#p-painL"); if (f) f.closest("section").scrollIntoView({block:"start"}); return; }
   if (d.guideback !== undefined){ const g = guideFrom; guideFrom = null; if (g) editDaySheet(g.key, g); else closeSheet(); return; }
@@ -2309,6 +2363,7 @@ document.addEventListener("click", ev => {
 document.addEventListener("input", ev => {
   const tg = ev.target, f = tg.dataset && tg.dataset.pain;
   if (f){ setPainDraft(f, tg.value, tg); return; }
+  if (tg.dataset && tg.dataset.pload && editDay){ editDay.ex.loads[tg.dataset.pload] = tg.value; updateEditBar(); return; }
   if (tg.dataset && tg.dataset.fi && fisio){ const [sc, id, fl] = tg.dataset.fi.split(":"), o = ftarget(sc, id); if (o){ o[fl] = tg.value; keepFisio(); } return; }
   if (tg.id === "cita-notes"){ state.citaNotes = tg.value; save(); return; }
   if (tg.dataset && tg.dataset.note !== undefined){ drOf(tg).note = tg.value; touched(tg); }
