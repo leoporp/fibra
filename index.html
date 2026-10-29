@@ -242,6 +242,7 @@ section{margin-bottom:6px}
 .flow p{margin:0 0 8px}
 .donechip{display:inline-flex;align-items:center;font-weight:700;color:var(--accent);padding:0 6px}
 .startbtn{margin-bottom:12px}
+.onebtn{margin:-4px 0 12px;white-space:normal;text-align:center}
 .sets{display:flex;align-items:center;gap:10px;margin:2px 0 10px;font-weight:700}
 .dots{display:flex;gap:6px}
 .dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent)}
@@ -965,7 +966,7 @@ function loadNudge(e){
 const nudged = () => state.exercises.filter(loadNudge);
 
 /* timer */
-let tmr = null, actx = null, wakeLock = null, startNote = false;
+let tmr = null, actx = null, wakeLock = null, startNote = false, oneOnly = false;
 const fmtSec = n => Math.floor(n/60) + ":" + pad(n%60);
 function unlockAudio(){ try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch(e){} }
 function beep(n){
@@ -1032,10 +1033,10 @@ function drawFlow(){
   const e = exById(detailId), pl = todayPlan(), idx = e ? pl.items.indexOf(e.id) : -1;
   if (idx < 0){ box.hidden = true; return; }
   box.hidden = false;
-  const isDone = pl.done(e.id), nx = nextUndone(e.id), total = e.sets || 0, sd = Math.min(setsDone(e.id), total);
+  const isDone = pl.done(e.id), nx = oneOnly ? null : nextUndone(e.id), total = e.sets || 0, sd = Math.min(setsDone(e.id), total);
   const run = tmr && tmr.id === e.id ? tmr : null;
   if (startNote && (setsDone(e.id) > 0 || isDone)) startNote = false;
-  let h = (startNote ? '<p class="pill play">'+esc(bundleMsg())+'</p>' : '')+'<p class="small muted">Ejercicio '+(idx+1)+' de '+pl.items.length+' de hoy</p>';
+  let h = (startNote ? '<p class="pill play">'+esc(bundleMsg())+'</p>' : '')+(oneOnly ? '<p class="small muted">Solo este ejercicio. Si tienes el brazo frío, mueve un poco las muñecas antes.</p>' : '<p class="small muted">Ejercicio '+(idx+1)+' de '+pl.items.length+' de hoy</p>');
   const todayLog = state.logs[key(new Date())] || {}, todayReps = todayLog.reps && todayLog.reps[e.id], lt = lastTime(e);
   const unitTxt = e.unit === "seg" ? "segundos" : "repeticiones";
   const loadLine = loadEdit ? '<div class="loadedit"><input type="text" id="load-in" value="'+esc(e.load || "")+'" placeholder="Ej: mancuerna sin discos, 2 kg" aria-label="Carga"><button class="btn sm" data-loadsave>Guardar</button></div>'
@@ -1050,7 +1051,7 @@ function drawFlow(){
       (todayReps && todayReps.length ? '<p class="small" style="margin:0 0 6px">Hoy: '+esc(fmtReps(e, todayReps))+(e.perArm ? ' (der/izq)' : '')+' '+unitTxt+'.</p>' : '')+
       loadLine+effortBox+
       '<div class="row">'+
-      (nx ? '<button class="btn" data-next>Siguiente ejercicio</button>' : '<button class="btn" data-close>Terminar</button>')+
+      (nx ? '<button class="btn" data-next>Siguiente ejercicio</button>' : '<button class="btn" data-close>'+(oneOnly ? "Volver a Hoy" : "Terminar")+'</button>')+
       '<button class="btn ghost" data-undone="'+e.id+'">Desmarcar</button></div>';
   } else if (total > 0){
     const st = steps(e), sdn = Math.min(setsDone(e.id), st), arm = e.perArm ? (sdn % 2 === 0 ? "brazo derecho" : "brazo izquierdo") : "";
@@ -1076,7 +1077,7 @@ function drawFlow(){
     }
     h += '<div class="row" style="margin-top:6px"><button class="icon-btn" data-done="'+e.id+'">Marcar todo hecho'+(nx ? ' y seguir' : '')+'</button></div>';
   } else {
-    h += '<div class="row"><button class="btn" data-done="'+e.id+'">'+(nx ? "Hecho, siguiente" : "Hecho, terminar la sesión")+'</button></div>';
+    h += '<div class="row"><button class="btn" data-done="'+e.id+'">'+(nx ? "Hecho, siguiente" : oneOnly ? "Hecho" : "Hecho, terminar la sesión")+'</button></div>';
   }
   box.className = "flow" + (run && run.kind === "rest" ? " rest" : "");
   box.innerHTML = h;
@@ -1213,7 +1214,8 @@ function viewHoy(){
 
   let list = "";
   const firstUndone = nextUndone(null);
-  if (items.length && firstUndone) list = '<button class="btn block startbtn" data-start data-detail="'+firstUndone+'">'+(done === 0 ? "Empezar la sesión" : "Seguir con: " + esc(exById(firstUndone).name))+'</button>';
+  if (items.length && firstUndone) list = '<button class="btn block startbtn" data-start data-detail="'+firstUndone+'">'+(done === 0 ? "Empezar la sesión" : "Seguir con: " + esc(exById(firstUndone).name))+'</button>'+
+    (left > 1 ? '<button class="btn ghost block onebtn" data-one="'+firstUndone+'">Hacer uno ahora: '+esc(exById(firstUndone).name)+' · unos '+exMin(exById(firstUndone))+' min</button>' : '');
   if (!items.length) list = '<div class="empty"><p style="margin-top:0">Esta sesión no tiene ejercicios todavía.</p><button class="btn" data-go="rutina">Editar rutina</button></div>';
   if (items.length) items.forEach((e, i) => {
     const on = !!log.done[e.id];
@@ -1954,7 +1956,7 @@ function openSheet(html, focusSel){
   if (f) try { f.focus({preventScroll: true}); } catch(e){ f.focus(); }
 }
 function closeSheet(opt){
-  stopTimer(); stopAnim(); detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; guideFrom = null; fisioOn = false;
+  stopTimer(); stopAnim(); oneOnly = false; detailId = null; draft = null; backTo = null; formFrom = null; editDay = null; guideFrom = null; fisioOn = false;
   const sc = $("#scrim"), sh = $("#sheet"), wasOpen = sheetOpen;
   sheetOpen = false; sc.classList.remove("open"); sheetClosedAt = wasOpen ? Date.now() : 0;
   clearTimeout(sheetHideT);
@@ -2319,7 +2321,7 @@ document.addEventListener("click", ev => {
   }
   if (d.done){
     stopTimer(); lastDoneId = d.done; startNote = false;
-    const r = setDone(d.done, true), nx = nextUndone(d.done);
+    const r = setDone(d.done, true), nx = oneOnly ? null : nextUndone(d.done);
     if (nx){ openDetail(nx); toast(r.msg || "Hecho. +10"); }
     else { closeSheet(); toast(r.msg || "Hecho. +10"); window.scrollTo(0,0); }
     return;
@@ -2344,8 +2346,9 @@ document.addEventListener("click", ev => {
   if (d.snooze){ const e = exById(d.snooze); if (e){ e.progSnooze = key(addDays(new Date(), 7)); save(); drawDetail(); toast("Te lo recuerdo en una semana"); } return; }
   if (d.rest){ state.restSec = Math.min(180, Math.max(15, (state.restSec || 60) + Number(d.rest))); save(); render(); return; }
   if (d.next !== undefined){ stopTimer(); startNote = false; const nx = nextUndone(detailId); if (nx) openDetail(nx); return; }
-  if (d.detail){ if (d.start !== undefined && dayStats(key(new Date())).done === 0){ preSheet(d.detail); return; } startNote = d.start !== undefined; openDetail(d.detail); return; }
-  if (d.gostart){ startNote = true; openDetail(d.gostart); return; }
+  if (d.one){ startNote = false; oneOnly = true; openDetail(d.one); return; }
+  if (d.detail){ oneOnly = false; if (d.start !== undefined && dayStats(key(new Date())).done === 0){ preSheet(d.detail); return; } startNote = d.start !== undefined; openDetail(d.detail); return; }
+  if (d.gostart){ oneOnly = false; startNote = true; openDetail(d.gostart); return; }
   if (d.gear !== undefined){ const on = t.getAttribute("aria-pressed") !== "true"; t.setAttribute("aria-pressed", String(on)); t.classList.toggle("on", on); return; }
   if (d.spend !== undefined){ spendForm(); return; }
   if (d.savespend !== undefined){
