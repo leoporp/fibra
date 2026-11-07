@@ -1906,9 +1906,21 @@ function goTab(t){
   if (document.startViewTransition && !reduceMotion()){ document.documentElement.dataset.vt = dir; try { const vt = document.startViewTransition(run); [vt.ready, vt.finished, vt.updateCallbackDone].forEach(pr => pr && pr.catch(() => {})); } catch(e){ run(); } }
   else run();
 }
+/* las filas de sesiones que se desplazan de lado conservan su posición al redibujar */
+function chipsKeep(root){
+  const prev = [...root.querySelectorAll(".chips")].map(c => c.scrollLeft);
+  return () => root.querySelectorAll(".chips").forEach((c, i) => {
+    if (prev[i] !== undefined) c.scrollLeft = prev[i];
+    const on = c.querySelector(".chip.on"); if (!on) return;
+    const l = on.offsetLeft - c.offsetLeft, r = l + on.offsetWidth;
+    if (l < c.scrollLeft) c.scrollLeft = l - 8;
+    else if (r > c.scrollLeft + c.clientWidth) c.scrollLeft = r - c.clientWidth + 8;
+  });
+}
 function render(){
-  const v = $("#view");
+  const v = $("#view"), keep = chipsKeep(v);
   v.innerHTML = tab === "hoy" ? viewHoy() : tab === "progreso" ? viewProgreso() : viewRutina();
+  keep();
   hydrateMedia(v);
   if (viewEnter){ viewEnter = false; v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); clearTimeout(enterT); enterT = setTimeout(() => v.classList.remove("enter"), 1400); }
   const bar = document.querySelector(".tabs div"); if (bar) bar.style.setProperty("--ti", TABS.indexOf(tab));
@@ -1945,7 +1957,9 @@ function openSheet(html, focusSel){
   const sc = $("#scrim"), sh = $("#sheet"), was = sheetOpen && sc.classList.contains("open");
   const oldH = was && sh.querySelector("h3") ? sh.querySelector("h3").textContent : null, oldTop = sh.scrollTop;
   clearTimeout(sheetHideT); fisioOn = false; sh.classList.remove("full");
+  const keep = chipsKeep(sh);
   sh.innerHTML = '<div class="grab" aria-hidden="true"></div>' + html;
+  keep();
   sheetOpen = true; sc.hidden = false;
   const same = was && oldH !== null && sh.querySelector("h3") && sh.querySelector("h3").textContent === oldH;
   if (same){ sh.classList.remove("swap"); sh.scrollTop = oldTop; }
