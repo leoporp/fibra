@@ -502,6 +502,35 @@ details.how p{margin:4px 0 8px}
 .stage .ill{max-height:30vh}
 .flow .repctl + p{text-align:center}
 .flow .icon-btn{margin:0 auto}
+
+/* gráfica desplazable */
+.cnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-2px 0 6px}
+.cspan{font-size:14px;font-weight:700;color:var(--ink);text-align:center;flex:1}
+.cbtn{width:40px;height:36px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:22px;line-height:1;color:var(--ink)}
+.cbtn:disabled{opacity:.3}
+.cnow{display:block;margin:-2px auto 6px;font-size:14px}
+.chart svg{touch-action:pan-y}
+.slidein-r{animation:cslr .32s var(--e-out)}
+.slidein-l{animation:csll .32s var(--e-out)}
+@keyframes cslr{from{opacity:.2;transform:translateX(-28px)}}
+@keyframes csll{from{opacity:.2;transform:translateX(28px)}}
+
+/* cambiar ejercicio */
+.swbtn{margin-top:12px}
+.swpanel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin-top:12px;box-shadow:var(--shadow)}
+.swhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.swq{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--bg);margin:6px 0 8px}
+.swlbl{margin:10px 0 6px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink)}
+.swlbl .muted{text-transform:none;letter-spacing:0;font-weight:400}
+.swlist{display:flex;flex-direction:column;gap:6px}
+.swrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:6px 10px 6px 6px}
+.swrow[hidden]{display:none}
+.swth{flex:none;width:64px;height:46px;border-radius:10px;background:var(--surface);display:grid;place-items:center;overflow:hidden;font-size:11px;color:var(--muted);text-align:center}
+.swth svg{width:100%;height:100%}
+.swt{flex:1;min-width:0}
+.swt b{display:block;font-size:15px;line-height:1.25}
+.swt span{display:block;font-size:13px;color:var(--muted)}
+.swscope{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 </style>
 </head>
 <body>
@@ -647,14 +676,25 @@ const ART = {
     segs:std4("Gira hacia afuera","Afuera","Vuelve despacio","Al frente"),
     draw:(p,dir) => { const E = [150,74], E2 = [50,74], H = P(E,lerp(90,12,p),52), H2 = P(E2,lerp(90,168,p),52);
       return El([100,62],58,18,"sup") + Ci([100,60],16,"bdf") + arrowFor(E,66,90,12,dir) + arrowFor(E2,66,90,168,dir) +
-        Ci(E,8,"bdf") + Ln(E,H,"bd",13) + Ci(E2,8,"bdf") + Ln(E2,H2,"bd",13) + Ln(H2,H,"band") + Ci(H,7,"bdf") + Ci(H2,7,"bdf"); } }
+        Ci(E,8,"bdf") + Ln(E,H,"bd",13) + Ci(E2,8,"bdf") + Ln(E2,H2,"bd",13) + Ln(H2,H,"band") + Ci(H,7,"bdf") + Ci(H2,7,"bdf"); } },
+  dbhold: { name:"Agarre isométrico con mancuerna", dur:6, thumbT:.5, note:"Vista desde el dorso de la mano. Muñeca recta, sin doblarla",
+    segs:[{a:0,b:.1,from:0,to:1,txt:"Aprieta el mango"},{a:.1,b:1,from:1,to:1,lin:true,txt:"Sostén apretando, muñeca recta"}],
+    draw:(p,dir,o) => { const c = [214,30], r = 15, circ = 2*Math.PI*r;
+      let out = Rc(88,116,48,40,10,"bdf") + Rc(20,44,18,52,5,"eqp") + Rc(186,44,18,52,5,"eqp") + Rc(36,63,152,14,7,"eqp") + Rc(82,60,60,66,18,"bdf");
+      [83,98,113,128].forEach((x,i) => { out += Rc(x,36+5*p+(i===0||i===3?4:0),13,40,6.5,"bdf"); });
+      return out + Ln([86,112],[68,90-4*p],"bd",14) + Ci(c,r,"ring") + '<circle cx="'+c[0]+'" cy="'+c[1]+'" r="'+r+'" class="ringp" stroke-dasharray="'+f1(o.t*circ)+' '+f1(circ)+'" transform="rotate(-90 '+c[0]+' '+c[1]+')"/>'; } },
+  platepinch: { name:"Pinza con disco", dur:6, thumbT:.5, note:"Un disco de la mancuerna, agarrado por el borde entre el pulgar y los dedos",
+    segs:[{a:0,b:.12,from:0,to:1,txt:"Pellizca el borde y levántalo un poco"},{a:.12,b:.88,from:1,to:1,lin:true,txt:"Sostén, sin que se resbale"},{a:.88,b:1,from:1,to:0,txt:"Bájalo despacio"}],
+    draw:(p) => { const y = -6*p, pc = [110,118+y];
+      return Rc(20,159,180,6,3,"sup") + Ln([108,60+y],[108,88+y],"bdl",10) + Ln([122,60+y],[121,88+y],"bdl",10) + Ln([134,58+y],[131,86+y],"bdl",10) +
+        Ci(pc,40,"eqp") + Ci(pc,9,"sup") + Ln([110,-6+y],[110,30+y],"bd",18) + Rc(80,22+y,60,44,18,"bdf") + Ln([88,52+y],[94,90+y],"bd",12); } }
 };
 function frameOf(art, t, loop, thumb){
   const st = seg(t, art.segs, art.dur), dir = Math.sign(st.s.to - st.s.from);
   const txt = typeof st.s.txt === "function" ? st.s.txt(st.k, st.secs, loop) : st.s.txt;
   return {inner: art.draw(st.p, dir, {t, thumb, loop}), txt};
 }
-const VB = {"ecc_ext": "2 31 179 89", "iso_ext": "2 5 210 107", "flex": "2 30 179 87", "prosup": "8 8 205 142", "radial": "2 1 194 149", "grip": "36 32 152 126", "fingext": "35 30 142 120", "pinch": "0 22 158 118", "tri_push": "0 3 180 155", "tri_oh": "0 0 195 150", "row": "18 17 180 117", "extrot": "-21 42 242 106"};
+const VB = {"ecc_ext": "2 31 179 89", "iso_ext": "2 5 210 107", "flex": "2 30 179 87", "prosup": "8 8 205 142", "radial": "2 1 194 149", "grip": "36 32 152 126", "fingext": "35 30 142 120", "pinch": "0 22 158 118", "tri_push": "0 3 180 155", "tri_oh": "0 0 195 150", "row": "18 17 180 117", "extrot": "-21 42 242 106", "dbhold": "16 11 217 149", "platepinch": "16 -16 188 186"};
 Object.keys(VB).forEach(k => { ART[k].vb = VB[k]; });
 function wave(x0, x1, y, amp, ph){
   let d = "M"+x0+" "+f1(y + Math.sin(ph)*amp);
@@ -689,6 +729,19 @@ const SEED_SESS = [
  {id:"sC", name:"Brazo completo", items:["ecc_ext","tri_oh","pinch","grip","row"]},
  {id:"sD", name:"Dedos y control", items:["iso_ext","fingext","pinch","prosup","extrot"]}
 ];
+/* Alternativas sugeridas para "Cambiar ejercicio": solo con el equipo de Leo, siempre por confirmar con Santiago. */
+const SUGGEST = [
+ {id:"dbhold", art:"dbhold", name:"Agarre isométrico con mancuerna", zone:"Agarre y dedos", sets:3, reps:20, unit:"seg", perArm:true, load:"Mancuerna sin discos", notes:"De pie o sentado, brazo al costado o con el antebrazo apoyado. Aprieta el mango con fuerza moderada y sostén con la muñeca recta, sin doblarla. Si molesta el codo, aprieta menos."},
+ {id:"platepinch", art:"platepinch", name:"Pinza con disco", zone:"Agarre y dedos", sets:3, reps:15, unit:"seg", perArm:true, load:"Un disco de la mancuerna", notes:"Agarra un disco por el borde, con el pulgar de un lado y los cuatro dedos del otro. Levántalo un poco de la mesa y sostén. Si es muy fácil, usa un disco más grande."}
+];
+/* Fichas: dibujo y "Cómo se hace" para ejercicios que Leo crea al cambiar. Claude las agrega aquí por nombre normalizado. */
+const FICHAS = {};
+const normName = t => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+function applyFichas(list){
+  for (const e of list){ if (e.art && ART[e.art]) continue; const f = FICHAS[normName(e.name)]; if (!f) continue;
+    if (f.art && ART[f.art]) e.art = f.art; if (!e.notes && f.notes) e.notes = f.notes; }
+}
+const sinFicha = e => !e.retired && !(e.art && ART[e.art]) && !(e.media || []).length;
 const SEED_RW = [];
 const OLD_RW = ["Noche de anime o película de horror, sin culpa", "Un skin o juego nuevo: Wild Rift, AoE2 u Overcooked", "Sushi o comida vietnamita en un sitio que te guste", "Partituras o un método nuevo de piano", "Masaje de descarga: antebrazos, cuello y espalda", "Un taller o clase especial de danza", "Paseo de un día en moto fuera de Bogotá, con reel incluido", "El bajo que tienes en la mira"];
 
@@ -696,7 +749,7 @@ const OLD_RW = ["Noche de anime o película de horror, sin culpa", "Un skin o ju
 const PER_ARM = {ecc_ext:1, iso_ext:1, flex:1, prosup:1, radial:1, grip:1, pinch:1};
 const OLD_LOAD = {ecc_ext:"1 kg", iso_ext:"1 kg o la otra mano", flex:"1 kg", prosup:"Martillo o mancuerna tomada de un extremo", radial:"Martillo", grip:"Pelota antiestrés", fingext:"Liga de pelo o banda pequeña", pinch:"Pelota o plastilina", tri_push:"Banda ligera", tri_oh:"2 kg", row:"Banda", extrot:"Banda ligera"};
 const COMPL = {flex:1, prosup:1, radial:1, grip:1, fingext:1, pinch:1, tri_push:1, tri_oh:1, row:1, extrot:1};
-const SEC_PER_REP = {ecc_ext:5, flex:3, prosup:4, radial:3.5, grip:7, fingext:2, pinch:4, tri_push:3, tri_oh:3.5, row:3.5, extrot:3.5};
+const SEC_PER_REP = {dbhold:3, platepinch:3, ecc_ext:5, flex:3, prosup:4, radial:3.5, grip:7, fingext:2, pinch:4, tri_push:3, tri_oh:3.5, row:3.5, extrot:3.5};
 function blank(){ return {v:8, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
 function migrate(s){
   s = Object.assign(blank(), s);
@@ -725,6 +778,7 @@ function migrate(s){
     s.rewards = (s.rewards || []).filter(r => !OLD_RW.includes(r.text)); s.fundV8 = true; }
   if (!Array.isArray(s.spends)) s.spends = [];
   if (!Array.isArray(s.visits)) s.visits = [];
+  applyFichas(s.exercises);
   s.v = 8;
   return s;
 }
@@ -918,11 +972,17 @@ const exById = id => state.exercises.find(e => e.id === id);
 const sessById = id => state.sessions.find(s => s.id === id);
 const letter = i => String.fromCharCode(65 + i);
 const sessLabel = s => "Sesión " + letter(state.sessions.indexOf(s));
+/* Ejercicios de una sesión en un día, aplicando los cambios "solo hoy" (log.swap = {original: reemplazo}). */
+function dayIds(k, sess){
+  const sw = (state.logs[k] && state.logs[k].swap) || {}, out = [];
+  for (const id of sess.items){ const x = sw[id] || id; if (!out.includes(x)) out.push(x); }
+  return out;
+}
 function dayStats(k){
-  const log = state.logs[k], sess = log && log.session ? sessById(log.session) : null;
+  const log = state.logs[k], sess = log && log.session ? sessById(log.session) : null, its = sess ? dayIds(k, sess) : null;
   let done = 0;
-  if (log && log.done){ const ids = Object.keys(log.done).filter(id => log.done[id]); done = sess ? ids.filter(id => sess.items.includes(id)).length : ids.length; }
-  const total = sess ? sess.items.length : ((log && log.total) || 0);
+  if (log && log.done){ const ids = Object.keys(log.done).filter(id => log.done[id]); done = its ? ids.filter(id => its.includes(id)).length : ids.length; }
+  const total = its ? its.length : ((log && log.total) || 0);
   const full = total > 0 && done >= total, counts = done > 0 && done >= Math.ceil(total/2);
   const pains = log ? [log.painL, log.painR].filter(v => typeof v === "number") : [];
   return {done, total, full, counts, pain: pains.length ? Math.max(...pains) : null, logged: pains.length > 0 || !!(log && (log.note || log.ice || log.heat || typeof log.breaks === "number"))};
@@ -978,7 +1038,7 @@ function level(){
 }
 function todayPlan(){
   const tk = key(fNow()), sess = sessionFor(tk), log = state.logs[tk] || {done:{}};
-  return {sess, items: sess ? sess.items.filter(id => exById(id)) : [], done: id => !!(log.done && log.done[id])};
+  return {sess, items: sess ? dayIds(tk, sess).filter(id => exById(id)) : [], done: id => !!(log.done && log.done[id])};
 }
 function nextUndone(afterId){
   const pl = todayPlan(), n = pl.items.length, start = afterId ? pl.items.indexOf(afterId) + 1 : 0;
@@ -1229,7 +1289,7 @@ function viewHoy(){
   const today = fNow(), tk = key(today), mon = monday(today);
   const sess = sessionFor(tk), log = state.logs[tk] || {done:{}};
   const fmt = today.toLocaleDateString("es-CO",{weekday:"long", day:"numeric", month:"long"});
-  const items = sess ? sess.items.map(exById).filter(Boolean) : [];
+  const items = sess ? dayIds(tk, sess).map(exById).filter(Boolean) : [];
   const done = items.filter(e => log.done[e.id]).length, left = items.length - done;
   let title;
   if (!sess || !items.length) title = "Arma una sesión para empezar.";
@@ -1293,7 +1353,7 @@ function viewHoy(){
   const hero = '<section class="hero'+(items.length && left === 0 ? " done" : "")+'">'+
     '<p class="eyebrow"><b>'+(sess ? esc(sessLabel(sess)) : "Sesión")+'</b></p>'+
     '<h2>'+(sess ? esc(sess.name) : "Sin sesión")+'</h2>'+
-    (sess && items.length ? '<p class="sessmeta small">'+sessMin(sess)+' min más '+WARM_MIN+' de calentamiento · '+items.length+' ejercicios</p>' : '')+
+    (sess && items.length ? '<p class="sessmeta small">'+sessMin({items: items.map(e => e.id)})+' min más '+WARM_MIN+' de calentamiento · '+items.length+' ejercicios</p>' : '')+
     bundle+cta+'</section>';
   return '<p class="date">'+esc(fmt)+'</p><h1>'+esc(title)+'</h1>'+hero+nextHtml+
     '<div class="week-card"><div class="wk"><b>Esta semana</b><span>'+goalTxt+'</span></div><div class="strands">'+week+'</div>'+fundHtml+'</div>'+
@@ -1330,7 +1390,7 @@ const WARMUP = [
 const EXTRA_GEAR = {ecc_ext: "Mesa o tu muslo para apoyar el antebrazo", iso_ext: "Mesa o tu muslo para apoyar el antebrazo", flex: "Mesa o tu muslo para apoyar el antebrazo", row: "Espacio en el piso para sentarte con las piernas estiradas"};
 function gearFor(sess){
   const out = [], seen = new Set(), add = t => { const k = t.toLowerCase(); if (!seen.has(k)){ seen.add(k); out.push(t); } };
-  for (const e of sess.items.map(exById).filter(Boolean)){
+  for (const e of dayIds(key(fNow()), sess).map(exById).filter(Boolean)){
     let g = (e.load || "").trim();
     if (/toalla/i.test(g)) g = "Toalla de mano";
     else if (/mini banda/i.test(g)) g = "Mini banda";
@@ -1406,7 +1466,7 @@ function pexInit(k){
   const l = state.logs[k] || {}, sess = sessionFor(k);
   return {sess: sess ? sess.id : null, done: Object.assign({}, l.done || {}), loads: Object.assign({}, l.loads || {}), effort: Object.assign({}, l.effort || {})};
 }
-function pexItems(){ const s = editDay && sessById(editDay.ex.sess); return s ? s.items.filter(id => exById(id)) : []; }
+function pexItems(){ const s = editDay && sessById(editDay.ex.sess); return s ? dayIds(editDay.key, s).filter(id => exById(id)) : []; }
 function pexDirty(){
   const d = editDay; if (!d || !d.ex) return false;
   const l = state.logs[d.key] || {}, x = d.ex, o = pexInit(d.key);
@@ -1488,10 +1548,23 @@ function fibersSvg(n){
   }
   return '<svg viewBox="0 0 '+W+' '+(rows*gap+8)+'" role="img" aria-label="'+n+' de '+rows+' fibras alineadas">'+p+'</svg>';
 }
-const PAIN_N = 28, P_TOP = 8, P_H = 110, B_TOP = P_TOP + P_H + 14, B_H = 22, LANE_H = 10, LANE_GAP = 7;
+/* ventana de la gráfica: rango (28 días, 3 meses o todo) y cuántos días atrás termina */
+let chartRange = 28, chartOff = 0;
+function chartN(){
+  if (chartRange !== "all") return chartRange;
+  const ks = Object.keys(state.logs).sort(); if (!ks.length) return 28;
+  return Math.max(28, Math.round((parseKey(key(fNow())) - parseKey(ks[0]))/864e5) + 1);
+}
+function chartMaxOff(){
+  if (chartRange === "all") return 0;
+  const ks = Object.keys(state.logs).sort(); if (!ks.length) return 0;
+  const span = Math.round((parseKey(key(fNow())) - parseKey(ks[0]))/864e5) + 1;
+  return Math.max(0, span - chartN());
+}
+const P_TOP = 8, P_H = 110, B_TOP = P_TOP + P_H + 14, B_H = 22, LANE_H = 10, LANE_GAP = 7;
 function painSeries(){
-  const today = fNow(), out = [];
-  for (let i = 0; i < PAIN_N; i++){ const k = key(addDays(today, i-(PAIN_N-1))), l = state.logs[k] || {};
+  const N = chartN(), end = addDays(fNow(), -chartOff), out = [];
+  for (let i = 0; i < N; i++){ const k = key(addDays(end, i-(N-1))), l = state.logs[k] || {};
     const L = typeof l.painL === "number" ? l.painL : null, R = typeof l.painR === "number" ? l.painR : null;
     const st = dayStats(k);
     out.push({k, L, R, M: L === null && R === null ? null : Math.max(L === null ? -1 : L, R === null ? -1 : R), frac: st.total ? Math.min(1, st.done/st.total) : 0, full: st.full,
@@ -1501,7 +1574,7 @@ function painSeries(){
 function chartSvg(){
   const arms = state.painView === "arms", data = painSeries();
   const W = 340, x0 = 46, x1 = arms ? W - 30 : W - 8, top = P_TOP, H = P_H, base = top + H;
-  const X = i => x0 + i*(x1 - x0)/(PAIN_N - 1), Y = v => top + (10 - v)/10*H;
+  const N = data.length, X = i => x0 + i*(x1 - x0)/(N - 1), Y = v => top + (10 - v)/10*H;
   let grid = "";
   for (let v = 0; v <= 10; v += 2) grid += '<line x1="'+x0+'" x2="'+x1+'" y1="'+Y(v)+'" y2="'+Y(v)+'" style="stroke:var(--line)"'+(v ? ' stroke-dasharray="2 4"' : '')+'/><text x="'+(x0-6)+'" y="'+(Y(v)+3.5)+'" class="tx" text-anchor="end">'+v+'</text>';
   const line = (f, color, dash, shape) => {
@@ -1529,7 +1602,7 @@ function chartSvg(){
     if (yr !== null) labels += '<text x="'+(x1+6)+'" y="'+(yr+3.5)+'" class="tx">Der</text>';
   } else lines = line("M", "--ink", false, "ci").svg;
   const xl = i => parseKey(data[i].k).toLocaleDateString("es-CO", {day:"numeric", month:"short"}).replace(".", "");
-  const sBase = B_TOP + B_H, bw = Math.max(3, (x1 - x0)/(PAIN_N - 1) - 3);
+  const sBase = B_TOP + B_H, step = (x1 - x0)/(N - 1), bw = Math.max(1.2, step - (step > 6 ? 3 : step > 3 ? 1 : .4));
   let bars = '<text x="0" y="'+(sBase-6)+'" class="tx lane">Sesión</text><line x1="'+x0+'" x2="'+x1+'" y1="'+sBase+'" y2="'+sBase+'" style="stroke:var(--line)"/>';
   /* carriles alineados con las mismas fechas: hielo, calor y pausas */
   const lanes = [["Hielo", d => d.ice ? 1 : 0], ["Calor", d => d.heat ? 1 : 0], ["Pausas", d => d.brk === null ? 0 : d.brk === 0 ? -1 : d.brk/5]];
@@ -1543,12 +1616,18 @@ function chartSvg(){
   });
   const bBase = sBase + LANE_GAP + 2 + lanes.length*(LANE_H + LANE_GAP) - LANE_GAP;
   data.forEach((d, i) => { if (d.frac > 0){ const h = Math.max(3, d.frac*B_H); bars += '<rect class="sbar" x="'+(X(i)-bw/2).toFixed(1)+'" y="'+(sBase-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" style="fill:var(--body)" opacity="'+(d.full ? .85 : .4)+'"/>'; } });
-  const xlab = '<text x="'+x0+'" y="'+(bBase+14)+'" class="tx">'+xl(0)+'</text><text x="'+X(14)+'" y="'+(bBase+14)+'" class="tx" text-anchor="middle">'+xl(14)+'</text><text x="'+x1+'" y="'+(bBase+14)+'" class="tx" text-anchor="end">hoy</text>';
+  const mid = Math.round((N-1)/2);
+  const xlab = '<text x="'+x0+'" y="'+(bBase+14)+'" class="tx">'+xl(0)+'</text><text x="'+X(mid)+'" y="'+(bBase+14)+'" class="tx" text-anchor="middle">'+xl(mid)+'</text><text x="'+x1+'" y="'+(bBase+14)+'" class="tx" text-anchor="end">'+(chartOff ? xl(N-1) : "hoy")+'</text>';
   let hits = "";
-  data.forEach((d, i) => { const w = (x1 - x0)/(PAIN_N - 1); hits += '<rect data-pday="'+i+'" x="'+(X(i) - w/2).toFixed(1)+'" y="'+top+'" width="'+w.toFixed(1)+'" height="'+(bBase - top)+'" style="fill:transparent;cursor:pointer"/>'; });
-  return '<svg viewBox="0 0 '+W+' '+(bBase+20)+'" role="img" aria-label="Dolor de 0 a 10, sesión, hielo, calor y pausas activas de los últimos 28 días">'+grid+bars+xlab+
+  data.forEach((d, i) => { const w = step; hits += '<rect data-pday="'+i+'" x="'+(X(i) - w/2).toFixed(1)+'" y="'+top+'" width="'+w.toFixed(1)+'" height="'+(bBase - top)+'" style="fill:transparent;cursor:pointer"/>'; });
+  return '<svg viewBox="0 0 '+W+' '+(bBase+20)+'" role="img" aria-label="Dolor de 0 a 10, sesión, hielo, calor y pausas activas, '+esc(chartSpan())+'">'+grid+bars+xlab+
     '<line id="pday-line" x1="0" x2="0" y1="'+top+'" y2="'+bBase+'" style="stroke:var(--muted)" stroke-width="1" visibility="hidden"/>'+
     '<clipPath id="reveal"><rect class="revealr" x="0" y="0" width="'+W+'" height="'+(base+6)+'"/></clipPath><g clip-path="url(#reveal)">'+lines+'</g>'+labels+'<g id="pday-dots"></g>'+hits+'</svg>';
+}
+function chartSpan(){
+  const N = chartN(), end = addDays(fNow(), -chartOff), st = addDays(end, -(N-1));
+  const f = d => d.toLocaleDateString("es-CO", {day:"numeric", month:"short"}).replace(".", "");
+  return f(st) + " – " + (chartOff ? f(end) : "hoy");
 }
 function gapLegend(legend){
   const ms = painSeries().map(d => d.M), f = ms.findIndex(v => v !== null), l = ms.length - 1 - ms.slice().reverse().findIndex(v => v !== null);
@@ -1568,8 +1647,14 @@ function painHtml(){
   const arms = state.painView === "arms", data = painSeries(), hasAny = data.some(d => d.M !== null || d.frac > 0 || d.ice || d.heat || d.brk !== null);
   const legend = arms ? '<div class="legend"><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armL)" stroke-width="2"/><circle cx="13" cy="5" r="4" style="fill:var(--armL)"/></svg>Izquierdo</span><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armR)" stroke-width="2" stroke-dasharray="5 4"/><rect x="9" y="1" width="8" height="8" rx="1.5" style="fill:var(--armR)"/></svg>Derecho</span></div>'
     : '';
-  return '<div class="segs two segctl" role="group" aria-label="Cómo ver el dolor"><button class="seg'+(arms ? "" : " on")+'" data-painview="max" aria-pressed="'+!arms+'">Brazo que más dolió</button><button class="seg'+(arms ? " on" : "")+'" data-painview="arms" aria-pressed="'+arms+'">Cada brazo</button></div>'+
-    '<div class="chart">'+(hasAny ? chartSvg() + gapLegend(legend) + '<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>'+habitsLine()+
+  const maxOff = chartMaxOff(), canBack = chartRange !== "all" && chartOff < maxOff;
+  const rng = [[28, "28 días"], [91, "3 meses"], ["all", "Todo"]].map(([v, t]) => '<button class="seg'+(chartRange === v ? " on" : "")+'" data-crange="'+v+'" aria-pressed="'+(chartRange === v)+'">'+t+'</button>').join("");
+  const nav = '<div class="cnav"><button class="cbtn" data-cpan="1" aria-label="Días anteriores"'+(canBack ? "" : " disabled")+'>‹</button><span class="cspan">'+esc(chartSpan())+'</span>'+
+    '<button class="cbtn" data-cpan="-1" aria-label="Días siguientes"'+(chartOff > 0 ? "" : " disabled")+'>›</button></div>'+
+    (chartOff > 0 ? '<button class="linkish small cnow" data-cnow>Volver a hoy</button>' : '');
+  return '<div class="segs three segctl" role="group" aria-label="Rango de la gráfica">'+rng+'</div>'+
+    '<div class="segs two segctl" role="group" aria-label="Cómo ver el dolor"><button class="seg'+(arms ? "" : " on")+'" data-painview="max" aria-pressed="'+!arms+'">Brazo que más dolió</button><button class="seg'+(arms ? " on" : "")+'" data-painview="arms" aria-pressed="'+arms+'">Cada brazo</button></div>'+
+    '<div class="chart" id="chart">'+(chartRange !== "all" ? nav : '<div class="cnav"><span class="cspan">'+esc(chartSpan())+'</span></div>')+(hasAny ? chartSvg() + gapLegend(legend) + '<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>'+habitsLine()+
       '<details class="how"><summary>¿Cómo leo esto?</summary>'+(arms ? '' : '<p>La línea es el brazo que más dolió cada día, no un promedio.</p>')+'<p>Debajo, con las mismas fechas: cuánto de la sesión hiciste, hielo, calor y pausas activas (más oscuro, mejor; punteado, no aplicaba).</p></details>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
 }
 
@@ -1634,7 +1719,7 @@ function viewProgreso(){
       '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p>'+
       '<details class="how"><summary>¿Cómo sumo puntos?</summary><p>10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Aparte, tu fondo suma plata real. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p></details></div>'+
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
-    '<h2>Dolor y constancia, 28 días</h2>'+painHtml()+insight()+
+    '<h2>Dolor y constancia</h2><div id="painbox">'+painHtml()+'</div>'+insight()+
     '<h2>Desde la última cita</h2>'+citaHtml("l")+
     '<h2>Segunda opinión</h2><p class="small muted" style="margin-top:0">Copia tus últimas 4 semanas (rutina, cargas, dolor y notas) y pégalas en tu proyecto de Claude. Lo que te diga, confírmalo con Santiago.</p>'+
     '<div class="row"><button class="btn ghost" data-aicopy>Copiar para Claude</button></div>'+
@@ -1928,7 +2013,7 @@ function viewRutina(){
     const names = s.items.map(exById).filter(Boolean).map(e => '<li><button class="linkish" data-detail="'+e.id+'">'+esc(e.name)+'</button></li>').join("");
     sess += '<div class="item"><header><div><div class="nm">Sesión '+letter(i)+': '+esc(s.name)+'</div>'+(s.items.length ? '<div class="small muted">Unos '+sessMin(s)+' minutos</div>' : '')+'</div><button class="icon-btn" data-editsess="'+s.id+'">Editar</button></header><ol class="sl">'+(names || '<li class="muted">Sin ejercicios</li>')+'</ol></div>';
   });
-  let lib = "";
+  let lib = ""; const nFichas = state.exercises.filter(sinFicha).length;
   for (const e of state.exercises){
     if (e.retired) continue;
     const used = state.sessions.filter(s => s.items.includes(e.id)).map(s => letter(state.sessions.indexOf(s))).join(", ");
@@ -1949,7 +2034,8 @@ function viewRutina(){
   return '<h1>Tu rutina.</h1><p class="muted" style="margin-top:-6px">Las sesiones rotan solas: cada día te toca la siguiente a la última que hiciste, así un día perdido no te desordena.</p>'+
     citaCard()+
     '<h2>Sesiones</h2>'+sess+'<button class="btn ghost block" data-addsess>Agregar sesión</button>'+
-    '<h2>Ejercicios</h2><p class="small muted" style="margin-top:0">Cuando Santiago te confirme uno, márcalo. Si te da otro, agrégalo: queda en una sesión y puedes grabarlo.</p>'+lib+
+    '<h2>Ejercicios</h2><p class="small muted" style="margin-top:0">Cuando Santiago te confirme uno, márcalo. Si te da otro, agrégalo: queda en una sesión y puedes grabarlo.</p>'+
+    (nFichas ? '<div class="notice" style="margin-top:4px"><span>'+(nFichas === 1 ? '1 ejercicio no tiene dibujo.' : nFichas+' ejercicios no tienen dibujo.')+' Copia la lista y pégala en el chat con Claude.</span><button class="btn sm" data-fichas>Pedir fichas</button></div>' : '')+lib+
     '<button class="btn block" data-add>Agregar ejercicio</button>'+
     '<h2>Mensaje para Santiago</h2><p class="small muted" style="margin-top:0">Se arma solo con tu rutina. Cópialo y mándaselo.</p>'+
     '<textarea class="out" id="msg" readonly>'+esc(santiagoText())+'</textarea>'+
@@ -2124,7 +2210,8 @@ function drawDetail(){
       (ART[art].note ? '<p class="pill">'+esc(ART[art].note)+'</p>' : '')+
       (e.id !== art ? '<p class="small muted" style="margin-top:6px">Dibujo de referencia: '+esc(ART[art].name)+'.</p>' : '');
   }
-  html += '<div class="flow" id="flow" hidden></div>';
+  html += '<div class="flow" id="flow" hidden></div><div id="swapbox"></div>';
+  if (!art && sinFicha(e)) html += '<p class="small muted" style="margin-top:12px">Este ejercicio todavía no tiene dibujo. <button class="linkish" data-fichas>Pedir ficha</button></p>';
   if (loadNudge(e)) html += '<div class="nudge"><b>Podrías estar listo para más carga.</b> Llevas dos semanas haciéndolo con dolor bajo. Pregúntale a Santiago antes de subir.'+
     '<div class="row" style="margin-top:8px"><button class="btn sm" data-edit="'+e.id+'">Ya la subí</button><button class="btn ghost sm" data-snooze="'+e.id+'">Recordarme en una semana</button></div></div>';
   if (e.pNote) html += '<h4>Indicación de Santiago</h4><p class="fprev" style="padding:8px 12px">'+esc(e.pNote)+' <span class="small muted">('+esc(fmtShort(e.pNoteD || key(fNow())))+')</span></p>';
@@ -2135,6 +2222,89 @@ function drawDetail(){
   hydrateMedia($("#sheet"));
   if (art) startAnim(art);
   drawFlow();
+  swap = null; drawSwap();
+}
+/* Cambiar ejercicio: elegir uno de la biblioteca, una alternativa sugerida o crear uno, solo hoy o en la rutina. */
+let swap = null;
+function swapCands(cur){
+  const pl = todayPlan(), lib = activeEx().filter(x => x.id !== cur.id && !pl.items.includes(x.id) && !SUGGEST.some(g => g.id === x.id));
+  const sug = SUGGEST.filter(g => g.zone === cur.zone && g.id !== cur.id && !pl.items.includes(g.id));
+  lib.sort((a, b) => (b.zone === cur.zone) - (a.zone === cur.zone) || a.name.localeCompare(b.name, "es"));
+  return {sug, lib};
+}
+function drawSwap(){
+  const box = $("#swapbox"), e = exById(detailId); if (!box || !e) return;
+  const pl = todayPlan();
+  if (!pl.items.includes(e.id) || pl.done(e.id)){ box.innerHTML = ""; return; }
+  const row = (x, tag) => '<button class="swrow" data-swpick="'+x.id+'" data-n="'+esc(normName(x.name))+'"><span class="swth">'+(x.art && ART[x.art] ? artThumb(x.art) : '<span class="ph">Sin dibujo</span>')+'</span><span class="swt"><b>'+esc(x.name)+'</b><span>'+esc(rx(x) || x.zone)+(x.zone !== e.zone ? ' · '+esc(x.zone) : '')+'</span></span>'+(tag ? '<span class="tag pend">'+tag+'</span>' : '')+'</button>';
+  let h = "";
+  if (!swap) h = '<button class="btn ghost block swbtn" data-swap>Cambiar este ejercicio</button>';
+  else if (swap.stage === "warn") h = '<div class="swpanel"><div class="fwarn" style="margin:0 0 10px"><b>Este te lo recomendó Santiago.</b> Antes de cambiarlo, pregúntale a él.</div>'+
+    '<div class="row"><button class="btn ghost" data-swlist>Igual quiero ver opciones</button><button class="btn ghost" data-swcancel>Mejor no</button></div></div>';
+  else if (swap.stage === "list"){
+    const c = swapCands(e);
+    h = '<div class="swpanel"><div class="swhead"><b>Cambiar '+esc(e.name)+'</b><button class="icon-btn" data-swcancel>Cerrar</button></div>'+
+      '<input type="search" id="swq" class="swq" placeholder="Busca o escribe uno nuevo" aria-label="Buscar ejercicio" autocomplete="off">'+
+      '<button class="btn sm" id="swnew" data-swnew hidden></button>'+
+      (c.sug.length ? '<p class="swlbl">Sugeridos para '+esc(e.zone.toLowerCase())+' <span class="muted">· confírmalos con Santiago</span></p><div class="swlist">'+c.sug.map(x => row(x, "Sugerido")).join("")+'</div>' : '')+
+      (c.lib.length ? '<p class="swlbl">De tu rutina</p><div class="swlist">'+c.lib.map(x => row(x, "")).join("")+'</div>' : '')+'</div>';
+  } else if (swap.stage === "scope"){
+    const to = swap.newName ? {name: swap.newName} : (exById(swap.to) || SUGGEST.find(g => g.id === swap.to));
+    const where = state.sessions.map((s, i) => s.items.includes(e.id) ? letter(i) : null).filter(Boolean);
+    h = '<div class="swpanel"><p style="margin:0 0 4px"><b>'+esc(e.name)+'</b> → <b>'+esc(to.name)+'</b></p>'+
+      '<p class="small muted" style="margin:0 0 10px">'+(swap.newName ? 'Se crea con las mismas series y repeticiones, sin dibujo todavía. ' : '')+'¿Solo para hoy o desde ahora en la rutina?</p>'+
+      '<div class="swscope"><button class="btn" data-swapply="day">Solo hoy</button><button class="btn" data-swapply="routine">En la rutina</button></div>'+
+      '<p class="small muted" style="margin:8px 0 0">En la rutina: lo reemplaza en '+(where.length > 1 ? 'las sesiones '+where.join(" y ") : 'la sesión '+(where[0] || ""))+'. '+esc(e.name)+' queda guardado con su historial.</p>'+
+      '<button class="icon-btn" data-swlist>Elegir otro</button></div>';
+  }
+  box.innerHTML = h;
+}
+function swapFilter(v){
+  const q = normName(v), w = q.split(" ").filter(Boolean); let exact = false;
+  document.querySelectorAll("#swapbox [data-n]").forEach(r => { const n = r.dataset.n, m = w.every(x => n.includes(x)); r.hidden = !m; if (n === q) exact = true; });
+  document.querySelectorAll("#swapbox .swlbl").forEach(l => { const list = l.nextElementSibling; l.hidden = list && ![...list.children].some(c => !c.hidden); });
+  const nb = $("#swnew"); if (nb){ nb.hidden = !q || exact; nb.textContent = "Crear «" + v.trim() + "»"; }
+}
+function applySwap(scope){
+  const cur = exById(detailId); if (!cur || !swap) return;
+  let to = swap.to ? exById(swap.to) : null;
+  if (!to && swap.to){ const g = SUGGEST.find(x => x.id === swap.to); if (g){ to = Object.assign({unit:"reps", confirmed:false, src:"ai", loadHistory:[], media:[]}, JSON.parse(JSON.stringify(g))); state.exercises.push(to); } }
+  if (!to && swap.newName){
+    to = state.exercises.find(x => normName(x.name) === normName(swap.newName));
+    if (!to){ to = {id: uid(), name: swap.newName, zone: cur.zone, sets: cur.sets, reps: cur.reps, unit: cur.unit || "reps", perArm: !!cur.perArm, load: "", notes: "", art: "", confirmed: false, loadHistory: [], media: []};
+      state.exercises.push(to); applyFichas([to]); }
+  }
+  if (!to) return;
+  if (to.retired) delete to.retired;
+  const tk = key(fNow()), sess = sessionFor(tk);
+  if (scope === "day"){
+    const log = ensureLog(tk); if (sess) log.session = sess.id;
+    log.swap = log.swap || {};
+    const orig = Object.keys(log.swap).find(k => log.swap[k] === cur.id) || cur.id;
+    log.swap[orig] = to.id;
+    toast("Solo hoy: " + to.name);
+  } else {
+    const where = [];
+    state.sessions.forEach((s, i) => { const at = s.items.indexOf(cur.id); if (at < 0) return; where.push(letter(i));
+      if (s.items.includes(to.id)) s.items.splice(at, 1); else s.items[at] = to.id; });
+    const log = state.logs[tk];
+    if (log && log.swap){ for (const k of Object.keys(log.swap)) if (log.swap[k] === cur.id || k === cur.id) delete log.swap[k]; }
+    toast(to.name + " reemplaza a " + cur.name + (where.length ? " (sesión " + where.join(" y ") + ")" : ""));
+  }
+  save(); swap = null; render(); openDetail(to.id);
+}
+function copyText(txt){
+  return new Promise(res => {
+    const fallback = () => { const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch(e){} ta.remove(); res(ok); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => res(true), fallback); else fallback();
+  });
+}
+function fichasText(){
+  const nf = state.exercises.filter(sinFicha);
+  return "Fichas pendientes de Fibra. Para cada ejercicio: dibujo y \"Cómo se hace\"; agrégalas a la app.\n" +
+    nf.map(e => "- " + e.name + " · " + e.zone + (rx(e) ? " · " + rx(e) : "") + (e.perArm ? " · cada brazo" : "")).join("\n") +
+    "\n(Son ejercicios que creé al cambiar otros; si el nombre no es claro, pregúntame cómo se hace.)";
 }
 function openDetail(id){ if (!tmr || tmr.id !== id) stopTimer(); draft = null; detailId = id; loadEdit = false; drawDetail(); }
 
@@ -2335,7 +2505,28 @@ function setPainDraft(f, v, el){
   drOf(el)[f] = Number(v); const pr = el.closest(".pr"), o = pr && pr.querySelector("output"); if (o) o.textContent = v;
   if (pr){ pr.classList.remove("unset"); const a = pr.querySelector(".anchor"); if (a) a.textContent = painTxt(Number(v)); } touched(el);
 }
+/* gráfica: flechas y deslizar el dedo para ver días anteriores */
+function panChart(dir){
+  if (chartRange === "all") return;
+  const step = chartN(), nx = Math.max(0, Math.min(chartMaxOff(), chartOff + dir*step));
+  if (nx === chartOff) return;
+  chartOff = nx; redrawChart(dir);
+}
+function redrawChart(dir){
+  const box = $("#painbox"); if (!box) { render(); return; }
+  box.innerHTML = painHtml();
+  const svg = box.querySelector(".chart svg");
+  if (svg && dir){ svg.classList.remove("slidein-l","slidein-r"); void svg.getBoundingClientRect(); svg.classList.add(dir > 0 ? "slidein-r" : "slidein-l"); }
+}
+let cSwipe = null;
+document.addEventListener("pointerdown", ev => { const c = ev.target.closest && ev.target.closest("#chart svg"); cSwipe = c ? {x: ev.clientX, y: ev.clientY} : null; });
+document.addEventListener("pointerup", ev => {
+  if (!cSwipe) return; const dx = ev.clientX - cSwipe.x, dy = ev.clientY - cSwipe.y; cSwipe = null;
+  if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)*1.5){ chartSwiped = Date.now(); panChart(dx > 0 ? 1 : -1); }
+});
+let chartSwiped = 0;
 document.addEventListener("click", ev => {
+  if (Date.now() - chartSwiped < 350 && ev.target.closest && ev.target.closest("#chart")){ chartSwiped = 0; return; }
   const pf = ev.target.dataset && ev.target.dataset.pain;
   if (pf && ev.target.closest(".pr").classList.contains("unset")){ setPainDraft(pf, ev.target.value, ev.target); return; }
   const pdEl = ev.target.closest && ev.target.closest("[data-pday]");
@@ -2352,6 +2543,16 @@ document.addEventListener("click", ev => {
   if (!t){ if (ev.target === $("#scrim")) closeSheet(); return; }
   const d = t.dataset;
   if (d.tab){ goTab(d.tab); return; }
+  if (d.swap !== undefined){ const e = exById(detailId); swap = {stage: e && e.src === "s" ? "warn" : "list"}; drawSwap(); return; }
+  if (d.swlist !== undefined){ swap = {stage: "list"}; drawSwap(); return; }
+  if (d.swcancel !== undefined){ swap = null; drawSwap(); return; }
+  if (d.swpick){ swap = {stage: "scope", to: d.swpick}; drawSwap(); return; }
+  if (d.swnew !== undefined){ const v = ($("#swq") && $("#swq").value || "").trim(); if (!v) return; swap = {stage: "scope", newName: v}; drawSwap(); return; }
+  if (d.swapply){ applySwap(d.swapply); return; }
+  if (d.fichas !== undefined){ copyText(fichasText()).then(ok => toast(ok ? "Copiado. Pégalo en el chat con Claude" : "No se pudo copiar")); return; }
+  if (d.crange){ chartRange = d.crange === "all" ? "all" : Number(d.crange); chartOff = Math.min(chartOff, chartMaxOff()); redrawChart(); return; }
+  if (d.cpan){ panChart(Number(d.cpan)); return; }
+  if (d.cnow !== undefined){ chartOff = 0; redrawChart(0); return; }
   if (d.fisio !== undefined){ if (!fisio) fisio = newFisio(); fisio.screen = "list"; keepFisio(); drawFisio(); return; }
   if (d.fdec || d.fsrc){ const [id, v] = (d.fdec || d.fsrc).split(":"), x = fx(id), f = d.fdec ? "dec" : "src";
     x[f] = x[f] === v ? undefined : v; if (x.dec === "adj") initAdj(x, exById(id)); keepFisio(); redrawCard(id); return; }
@@ -2524,12 +2725,18 @@ document.addEventListener("click", ev => {
     return;
   }
 });
+document.addEventListener("keydown", ev => {
+  if (ev.key !== "Enter" || !ev.target || ev.target.id !== "swq") return;
+  ev.preventDefault(); const nb = $("#swnew"); if (nb && !nb.hidden){ nb.click(); return; }
+  const first = [...document.querySelectorAll("#swapbox [data-swpick]")].find(r => !r.hidden); if (first) first.click();
+});
 document.addEventListener("input", ev => {
   const tg = ev.target, f = tg.dataset && tg.dataset.pain;
   if (f){ setPainDraft(f, tg.value, tg); return; }
   if (tg.dataset && tg.dataset.pload && editDay){ editDay.ex.loads[tg.dataset.pload] = tg.value; updateEditBar(); return; }
   if (tg.dataset && tg.dataset.fi && fisio){ const [sc, id, fl] = tg.dataset.fi.split(":"), o = ftarget(sc, id); if (o){ o[fl] = tg.value; keepFisio(); } return; }
   if (tg.id === "cita-notes"){ state.citaNotes = tg.value; save(); return; }
+  if (tg.id === "swq"){ swapFilter(tg.value); return; }
   if (tg.dataset && tg.dataset.note !== undefined){ drOf(tg).note = tg.value; touched(tg); }
 });
 document.addEventListener("change", ev => {
