@@ -21,6 +21,8 @@
   --bg:#EEF0EB; --surface:#FFFFFF; --ink:#1F1B19; --muted:#69625D; --line:#DCD8D1;
   --accent:#9A3F27; --accent-ink:#FFFFFF; --soft:#F4E4DC; --fiber:#B8741E; --cue:#3D7C83; --warn:#C4161C; --warn-soft:#FBE3E1; --armL:#2A6FB0; --armR:#9A3F27;
   --body:#3A4048;
+  --shadow:0 1px 2px rgba(31,27,25,.05),0 6px 18px -6px rgba(31,27,25,.10);
+  --hero:#2B201C;
   --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
   --body-font:"Atkinson Hyperlegible", "Segoe UI", Roboto, Arial, sans-serif;
   box-sizing:border-box;
@@ -29,13 +31,13 @@
   :root:not([data-theme="light"]){
     --bg:#131615; --surface:#1C201F; --ink:#ECE7E3; --muted:#A49D97; --line:#303634;
     --accent:#E58A68; --accent-ink:#1B0E09; --soft:#3A2722; --fiber:#E8B25E; --cue:#7FC4CA; --warn:#FF7B72; --warn-soft:#3B1F1E; --armL:#4A90E2; --armR:#DB6F4C;
-    --body:#C9CED3;
+    --body:#C9CED3; --shadow:none; --hero:#2A1C17;
   }
 }
 :root[data-theme="dark"]{
   --bg:#131615; --surface:#1C201F; --ink:#ECE7E3; --muted:#A49D97; --line:#303634;
   --accent:#E58A68; --accent-ink:#1B0E09; --soft:#3A2722; --fiber:#E8B25E; --cue:#7FC4CA; --warn:#FF7B72; --warn-soft:#3B1F1E; --armL:#4A90E2; --armR:#DB6F4C;
-  --body:#C9CED3;
+  --body:#C9CED3; --shadow:none; --hero:#2A1C17;
 }
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body-font);font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px)}
@@ -130,10 +132,10 @@ button{cursor:pointer}
 .segs4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .warm{margin:0;padding-left:22px}
 .warm li{margin:0 0 8px;font-size:15px}
-.repctl{display:flex;align-items:center;gap:12px;margin:4px 0 10px}
-.repctl button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:22px}
-.repctl b{font-family:var(--display);font-size:40px;font-weight:800;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
-.repctl span{color:var(--muted);font-size:15px;flex:1;text-align:right}
+.repctl{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin:8px 0 10px}
+.repctl button{width:56px;height:56px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:22px}
+.repctl b{font-family:var(--display);font-size:56px;letter-spacing:-.03em;font-weight:800;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.repctl span{color:var(--muted);font-size:15px;flex-basis:100%;text-align:center;order:3}
 .loadline{margin:0 0 4px}
 .lastline{margin:0 0 8px}
 .loadedit{display:flex;gap:8px;margin:0 0 8px}
@@ -171,9 +173,9 @@ button{cursor:pointer}
 .sync{font-size:13px;color:var(--muted)}
 button.sync{background:none;border:0;padding:8px 0;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;text-align:right}
 .next.cloud{border-left-color:var(--accent)}
-h1{font-family:var(--display);font-weight:700;font-size:32px;line-height:1.08;letter-spacing:-.025em;margin:4px 0 16px}
-h2{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:-.01em;margin:30px 0 10px}
-.date{color:var(--muted);margin:10px 0 0;font-size:15px}
+h1{font-family:var(--display);font-weight:800;font-size:36px;line-height:1.02;letter-spacing:-.035em;margin:4px 0 18px;text-wrap:balance}
+h2{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.02em;margin:32px 0 12px}
+.date{color:var(--muted);margin:12px 0 2px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
 .muted{color:var(--muted)}
 .small{font-size:14px}
 section{margin-bottom:6px}
@@ -196,22 +198,23 @@ section{margin-bottom:6px}
 .next.ready{background:var(--soft);border-color:var(--fiber)}
 
 /* session chips */
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:-2px 0 12px;scrollbar-width:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:0 -16px 12px;padding-left:16px;padding-right:16px;scroll-padding-left:16px;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:15px;color:var(--muted)}
 .chip b{color:var(--ink)}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chip.on b{color:var(--bg)}
 
 /* exercises */
-.ex{display:flex;align-items:stretch;background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
-.ex.on{border-color:var(--accent);background:var(--soft)}
+.ex{display:flex;align-items:stretch;background:var(--surface);border:1px solid var(--line);border-radius:18px;margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow)}
+.ex.on{border-color:var(--accent);background:var(--soft);box-shadow:none}
+.ex.on .thumb{background:var(--surface)}
 .exmain{flex:1;min-width:0;display:flex;gap:12px;align-items:flex-start;text-align:left;background:none;border:0;padding:14px 12px 14px 14px}
 .ck{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center;margin-top:1px}
 .ex.on .ck{background:var(--accent);border-color:var(--accent)}
 .ex.on .ck::after{content:"";width:8px;height:14px;border:solid var(--accent-ink);border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-2px)}
 .nm{font-weight:700;display:block}
 .rx{display:block;color:var(--muted);font-size:15px}
-.thumb{flex:none;width:100px;border:0;border-left:1px solid var(--line);background:var(--bg);padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:12px}
+.thumb{flex:none;width:96px;border:0;margin:6px;border-radius:13px;background:var(--bg);padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:12px}
 .thumb svg,.thumb img{width:100%;height:auto;display:block;border-radius:6px}
 .thumb img{aspect-ratio:22/15;object-fit:cover}
 .thumb .ph{font-size:13px;line-height:1.2;text-align:center;padding:4px}
@@ -238,7 +241,8 @@ section{margin-bottom:6px}
 .stage .ill{max-height:42vh;margin:0 auto}
 .stagebar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:10px 0 4px}
 .phase{font-family:var(--display);font-weight:700;font-size:20px;line-height:1.2;margin:0;min-height:2.4em;display:flex;align-items:center}
-.flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:14px}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:14px 16px;margin-top:14px;box-shadow:var(--shadow)}
+.flow .row > .btn:first-child{flex:1;min-height:52px}
 .flow p{margin:0 0 8px}
 .donechip{display:inline-flex;align-items:center;font-weight:700;color:var(--accent);padding:0 6px}
 .startbtn{margin-bottom:12px}
@@ -248,7 +252,7 @@ section{margin-bottom:6px}
 .dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent)}
 .dots i.on{background:var(--accent)}
 .tmr{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:4px 0 10px}
-.tmr b{font-family:var(--display);font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.tmr b{font-family:var(--display);font-size:56px;letter-spacing:-.03em;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
 .tmr span{color:var(--muted);font-size:15px}
 .tbar{height:6px;background:var(--bg);border-radius:99px;overflow:hidden;margin-bottom:12px}
 .tbar span{display:block;height:100%;background:var(--fiber);border-radius:99px}
@@ -271,7 +275,7 @@ textarea.note{width:100%;min-height:70px;margin-top:8px;border:1px solid var(--l
 .alert{background:var(--warn-soft);color:var(--ink);border-left:4px solid var(--warn);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:15px}
 
 /* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:13px 20px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .btn.danger{background:transparent;color:var(--warn);border:1px solid var(--warn)}
 .btn.sm{padding:8px 12px;font-size:14px;border-radius:10px}
@@ -289,8 +293,8 @@ textarea.note{width:100%;min-height:70px;margin-top:8px;border:1px solid var(--l
 .bar span{display:block;height:100%;background:var(--fiber);border-radius:99px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
-.stat b{display:block;font-family:var(--display);font-size:28px;font-weight:800;line-height:1}
-.stat span{font-size:13px;color:var(--muted)}
+.stat b{display:block;font-family:var(--display);font-size:34px;font-weight:800;line-height:1;letter-spacing:-.03em}
+.stat span{display:block;font-size:13px;line-height:1.25;color:var(--muted);margin-top:6px}
 .chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
 .chart svg{width:100%;height:auto;display:block}
 .chart .tx{fill:var(--muted);font-size:10px}
@@ -332,15 +336,17 @@ textarea.out{width:100%;min-height:160px;border:1px solid var(--line);border-rad
 .upl.err{color:var(--warn)}
 
 /* nav */
-.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--surface) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
 .tabs div{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
 .tabs div{position:relative}
 .tabs .ind{position:absolute;top:0;left:0;width:calc(100% / 3);height:3px;border-radius:0 0 3px 3px;background:var(--accent);transform:translateX(calc(var(--ti, 0) * 100%));transition:transform var(--t3) var(--e-spring)}
 .tabs button{background:none;border:0;padding:9px 0 11px;font-weight:700;color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color var(--t2) var(--e-out)}
-.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:stroke var(--t2)}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tabs svg circle{fill:currentColor;stroke:none}
 .tabs button[aria-current="page"]{color:var(--ink)}
-.tabs button[aria-current="page"] svg{stroke:var(--accent)}
+.tabs button[aria-current="page"] svg{stroke:var(--accent);background:var(--soft)}
+.tabs svg{box-sizing:content-box;padding:4px 18px;border-radius:999px;transition:stroke var(--t2),background-color var(--t2) var(--e-out)}
+.tabs .ind{display:none}
 .tabs button[aria-current="page"] svg circle{fill:var(--accent)}
 .tabs button.pop svg path{animation:drawp .6s var(--e-out) both}
 .tabs button.pop svg path:nth-child(2){animation-delay:60ms}.tabs button.pop svg path:nth-child(3){animation-delay:120ms}
@@ -348,7 +354,7 @@ textarea.out{width:100%;min-height:160px;border:1px solid var(--line);border-rad
 /* cambio de pestaña */
 #view{view-transition-name:view}
 .tabs{view-transition-name:tabs}
-.top{view-transition-name:top}
+.wrap > .top{view-transition-name:top}
 ::view-transition-group(view){animation-duration:0s}
 ::view-transition-old(root),::view-transition-new(root),::view-transition-old(tabs),::view-transition-new(tabs),::view-transition-old(top),::view-transition-new(top){animation:none}
 ::view-transition-old(view){animation:vtOutL 160ms var(--e-out) both}
@@ -443,6 +449,59 @@ b.warn{color:var(--warn)}
 .frow{display:flex;align-items:center;gap:10px;margin-top:12px}
 .fbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:18px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:2}
 .tag.src{border-color:var(--cue);color:var(--cue)}
+
+/* rediseño: tarjeta héroe de la sesión, semana y aviso único */
+.card-like,.item,.pain,.chart,.fibers,.stat,.fund,.habits,.rw,.dayrow,.cita-sum,.week-card{box-shadow:var(--shadow)}
+.item,.pain,.chart,.fund,.habits,.cita-sum{border-radius:18px}
+.fibers{border-radius:22px}
+.stat{border-radius:16px;padding:14px 12px}
+.hero{--accent:#E58A68;--accent-ink:#1B0E09;--ink:#F6EFEA;--muted:rgba(246,239,234,.66);--line:rgba(246,239,234,.17);--fiber:#E8B25E;--bg:rgba(246,239,234,.08);--surface:rgba(246,239,234,.06);
+  background:var(--hero);color:var(--ink);border-radius:26px;padding:18px 18px 16px;margin:0 0 14px;position:relative;overflow:hidden;box-shadow:0 18px 40px -22px rgba(43,32,28,.55)}
+.hero::before{content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(229,138,104,.22),transparent);pointer-events:none}
+.hero .eyebrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0}
+.hero .eyebrow b{font-family:var(--display);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--fiber)}
+.hero h2{margin:4px 0 2px;font-size:26px;line-height:1.08}
+.hero .sessmeta{margin:0 0 12px;color:var(--muted)}
+.hero .bundle{margin:6px 0 14px}
+.hero .bundle p{color:var(--muted)}
+.hero .startbtn{margin:0;min-height:54px;font-size:18px}
+.hero .onebtn{margin:8px 0 0;padding:10px 12px;font-size:15px;color:var(--ink)}
+.hero .empty{background:transparent;border-color:var(--line)}
+.hero.done{box-shadow:none}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .hero{border:1px solid rgba(229,138,104,.22);box-shadow:none} }
+:root[data-theme="dark"] .hero{border:1px solid rgba(229,138,104,.22);box-shadow:none}
+.week-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px 12px;margin:0 0 6px}
+.week-card .strands{margin:2px 0 6px}
+.week-card .strands svg{height:44px}
+.week-card .wk{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.week-card .wk b{color:var(--ink)}
+.next.fundline{all:unset;display:block;cursor:pointer;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);width:100%}
+.next.fundline b{color:var(--ink)}
+.notice{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--soft);border:0;border-radius:14px;padding:10px 12px;margin:0 0 14px;font-size:15px;color:var(--ink)}
+.notice::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--fiber)}
+.notice.cloud::before{background:var(--accent)}
+.notice .go{margin-left:auto;flex:none;font-weight:700;color:var(--accent)}
+/* control segmentado */
+.segs.segctl{gap:0;padding:4px;background:color-mix(in srgb,var(--line) 70%,transparent);border-radius:14px;margin-bottom:10px}
+.segctl .seg{border:0;background:transparent;min-height:40px;font-size:14px;font-weight:700;border-radius:10px;color:var(--muted)}
+.segctl .seg.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+/* explicaciones plegables */
+details.how{margin:8px 0 0;font-size:14px;color:var(--muted)}
+details.how summary{cursor:pointer;font-weight:700;color:var(--ink);list-style:none;display:inline-flex;align-items:center;gap:6px;padding:6px 0}
+details.how summary::-webkit-details-marker{display:none}
+details.how summary::after{content:"";width:7px;height:7px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-2px);transition:transform var(--t2) var(--e-out)}
+details.how[open] summary::after{transform:rotate(-135deg) translateY(-1px)}
+details.how p{margin:4px 0 8px}
+
+.hero .onebtn{flex-direction:column;gap:1px;line-height:1.2}
+.hero .onebtn b{font-size:15px}
+.hero .onebtn span{font-weight:400;font-size:13px;color:var(--muted)}
+.fibers.hero{padding:20px 18px 14px}
+.fibers.hero .bar{background:rgba(246,239,234,.12)}
+.fibers.hero .lvl b{font-size:28px}
+.stage .ill{max-height:30vh}
+.flow .repctl + p{text-align:center}
+.flow .icon-btn{margin:0 auto}
 </style>
 </head>
 <body>
@@ -1175,7 +1234,7 @@ function viewHoy(){
   let title;
   if (!sess || !items.length) title = "Arma una sesión para empezar.";
   else if (left === 0) title = "Sesión completa.";
-  else if (done === 0) title = "Hoy toca la sesión " + letter(state.sessions.indexOf(sess)) + ": " + sess.name + ".";
+  else if (done === 0) title = "Hoy toca entrenar.";
   else title = left === 1 ? "Te falta uno." : "Te faltan " + left + ".";
 
   let week = "";
@@ -1200,26 +1259,26 @@ function viewHoy(){
   lastDoneId = null;
   if (!sheetOpen){ morphSet.clear(); weekMorph = false; }
   const wc = weekCount(mon);
-  const goalTxt = wc >= state.weeklyGoal ? "Meta de la semana cumplida: " + wc + " de " + state.weeklyGoal + " días." : "Llevas " + wc + " de " + state.weeklyGoal + " días esta semana.";
+  const goalTxt = wc >= state.weeklyGoal ? "Meta cumplida: " + wc + " de " + state.weeklyGoal + " días" : wc + " de " + state.weeklyGoal + " días de la meta";
 
   const rs = rewardsSorted(), ready = rs.find(x => x.i.ok && !x.r.claimed), nxt = rs.find(x => !x.i.ok);
-  let nextHtml = "";
   const fd = fund(), todayCounts = dayStats(tk).counts;
-  if (ready) nextHtml = '<button class="next ready" data-go="progreso"><b>Tienes una recompensa por reclamar:</b> '+esc(ready.r.text)+'</button>';
-  nextHtml += '<button class="next fundline" data-go="progreso">Tu fondo: <b>'+money(fd.left)+'</b>. '+(todayCounts ? "Hoy ya sumaste "+money(FUND_DAY)+"." : "Hoy sumas "+money(FUND_DAY)+" si haces al menos la mitad de la sesión.")+'</button>';
-  if (!ready && nxt) nextHtml += '<button class="next" data-go="progreso">Próxima recompensa: <b>'+esc(nxt.r.text)+'</b>. '+esc(nxt.i.left)+'.</button>';
-
-  if (sb && !session) nextHtml = '<button class="next cloud" data-login>Tus datos están solo en este dispositivo. <b>Inicia sesión</b> para respaldarlos en la nube.</button>' + nextHtml;
+  const fundHtml = '<button class="next fundline" data-go="progreso">Tu fondo: <b>'+money(fd.left)+'</b>. '+(todayCounts ? "Hoy ya sumaste "+money(FUND_DAY)+"." : "Hoy sumas "+money(FUND_DAY)+" con media sesión.")+'</button>';
+  // Un solo aviso, el más importante, para que no compitan entre sí ni con la sesión.
   const nd = nudged();
-  if (nd.length) nextHtml += '<button class="next" data-go="rutina">'+(nd.length === 1 ? esc(nd[0].name)+' podría estar listo' : nd.length+' ejercicios podrían estar listos')+' para más carga. Confírmalo con Santiago.</button>';
+  let nextHtml = "";
+  if (ready) nextHtml = '<button class="notice next ready" data-go="progreso"><span><b>Recompensa por reclamar:</b> '+esc(ready.r.text)+'</span><span class="go">Ver</span></button>';
+  else if (sb && !session) nextHtml = '<button class="notice next cloud" data-login><span>Tus datos están solo en este dispositivo.</span><span class="go">Respaldar</span></button>';
+  else if (nd.length) nextHtml = '<button class="notice next" data-go="rutina"><span>'+(nd.length === 1 ? esc(nd[0].name)+' podría estar listo' : nd.length+' ejercicios podrían estar listos')+' para más carga. Confírmalo con Santiago.</span></button>';
+  else if (nxt) nextHtml = '<button class="notice next" data-go="progreso"><span>Próxima recompensa: <b>'+esc(nxt.r.text)+'</b>. '+esc(nxt.i.left)+'.</span></button>';
   let chips = "";
   state.sessions.forEach((ss,i) => { const on = sess && ss.id === sess.id; chips += '<button class="chip'+(on?" on":"")+'" data-pick="'+ss.id+'" aria-pressed="'+!!on+'"><b>'+letter(i)+'</b> '+esc(ss.name)+'</button>'; });
 
-  let list = "";
+  let list = "", cta = "";
   const firstUndone = nextUndone(null);
-  if (items.length && firstUndone) list = '<button class="btn block startbtn" data-start data-detail="'+firstUndone+'">'+(done === 0 ? "Empezar la sesión" : "Seguir con: " + esc(exById(firstUndone).name))+'</button>'+
-    (left > 1 ? '<button class="btn ghost block onebtn" data-one="'+firstUndone+'">Hacer uno ahora: '+esc(exById(firstUndone).name)+' · unos '+exMin(exById(firstUndone))+' min</button>' : '');
-  if (!items.length) list = '<div class="empty"><p style="margin-top:0">Esta sesión no tiene ejercicios todavía.</p><button class="btn" data-go="rutina">Editar rutina</button></div>';
+  if (items.length && firstUndone) cta = '<button class="btn block startbtn" data-start data-detail="'+firstUndone+'">'+(done === 0 ? "Empezar la sesión" : "Seguir con: " + esc(exById(firstUndone).name))+'</button>'+
+    (left > 1 ? '<button class="btn ghost block onebtn" data-one="'+firstUndone+'"><b>Hacer uno ahora:</b> <span>'+esc(exById(firstUndone).name)+' · unos '+exMin(exById(firstUndone))+' min</span></button>' : '');
+  if (!items.length) cta = '<div class="empty"><p style="margin-top:0">Esta sesión no tiene ejercicios todavía.</p><button class="btn" data-go="rutina">Editar rutina</button></div>';
   if (items.length) items.forEach((e, i) => {
     const on = !!log.done[e.id];
     list += '<div class="ex'+(on?" on":"")+(on && morphSet.has(e.id) && !sheetOpen ? " juston" : "")+'"><button class="exmain" data-toggle="'+e.id+'" aria-pressed="'+on+'"><span class="ck" aria-hidden="true"></span><span><span class="nm">'+(i+1)+'. '+esc(e.name)+'</span>'+
@@ -1231,10 +1290,14 @@ function viewHoy(){
   const alert = worst >= 7 ? '<div class="alert">Dolor alto hoy. Baja la carga o quédate con los isométricos, y si sigue así un par de días, avísale a Santiago.</div>' : "";
   const pending = state.exercises.some(e => !e.confirmed && !e.retired);
 
-  return '<p class="date">'+esc(fmt)+'</p><h1>'+esc(title)+'</h1>'+bundle+
-    '<div class="strands">'+week+'</div><p class="small muted" style="margin:0">'+goalTxt+'</p>'+nextHtml+
-    '<section><h2>'+(sess ? esc(sessLabel(sess)+": "+sess.name) : "Sesión")+'</h2>'+
-    (sess && items.length ? '<p class="sessmeta">Unos '+sessMin(sess)+' minutos más '+WARM_MIN+' de calentamiento, '+items.length+' ejercicios.</p>' : '')+
+  const hero = '<section class="hero'+(items.length && left === 0 ? " done" : "")+'">'+
+    '<p class="eyebrow"><b>'+(sess ? esc(sessLabel(sess)) : "Sesión")+'</b></p>'+
+    '<h2>'+(sess ? esc(sess.name) : "Sin sesión")+'</h2>'+
+    (sess && items.length ? '<p class="sessmeta small">'+sessMin(sess)+' min más '+WARM_MIN+' de calentamiento · '+items.length+' ejercicios</p>' : '')+
+    bundle+cta+'</section>';
+  return '<p class="date">'+esc(fmt)+'</p><h1>'+esc(title)+'</h1>'+hero+nextHtml+
+    '<div class="week-card"><div class="wk"><b>Esta semana</b><span>'+goalTxt+'</span></div><div class="strands">'+week+'</div>'+fundHtml+'</div>'+
+    '<section><h2>Ejercicios</h2>'+
     (state.sessions.length > 1 ? '<div class="chips" aria-label="Cambiar sesión">'+chips+'</div>' : '')+
     list+'<p class="small muted">Toca el dibujo para ver el movimiento.'+(pending ? ' Rutina sugerida a partir de protocolos comunes para epicondilitis: confírmala con Santiago.' : '')+'</p></section>'+
     '<section'+(regAnim ? ' class="regin"' : '')+'><h2>Registro del día</h2>'+(log.savedAt && !draftDirty() && !regOpen
@@ -1504,9 +1567,10 @@ function painDayText(i){
 function painHtml(){
   const arms = state.painView === "arms", data = painSeries(), hasAny = data.some(d => d.M !== null || d.frac > 0 || d.ice || d.heat || d.brk !== null);
   const legend = arms ? '<div class="legend"><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armL)" stroke-width="2"/><circle cx="13" cy="5" r="4" style="fill:var(--armL)"/></svg>Izquierdo</span><span><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" style="stroke:var(--armR)" stroke-width="2" stroke-dasharray="5 4"/><rect x="9" y="1" width="8" height="8" rx="1.5" style="fill:var(--armR)"/></svg>Derecho</span></div>'
-    : '<p class="small muted" style="margin:6px 0 0">La línea es el brazo que más dolió cada día, no un promedio.</p>';
-  return '<div class="segs two" role="group" aria-label="Cómo ver el dolor"><button class="seg'+(arms ? "" : " on")+'" data-painview="max" aria-pressed="'+!arms+'">Brazo que más dolió</button><button class="seg'+(arms ? " on" : "")+'" data-painview="arms" aria-pressed="'+arms+'">Cada brazo</button></div>'+
-    '<div class="chart">'+(hasAny ? chartSvg() + gapLegend(legend) + '<p class="small muted" style="margin:4px 0 0">Debajo, con las mismas fechas: cuánto de la sesión hiciste, hielo, calor y pausas activas (más oscuro, mejor; punteado, no aplicaba).</p>'+habitsLine()+'<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
+    : '';
+  return '<div class="segs two segctl" role="group" aria-label="Cómo ver el dolor"><button class="seg'+(arms ? "" : " on")+'" data-painview="max" aria-pressed="'+!arms+'">Brazo que más dolió</button><button class="seg'+(arms ? " on" : "")+'" data-painview="arms" aria-pressed="'+arms+'">Cada brazo</button></div>'+
+    '<div class="chart">'+(hasAny ? chartSvg() + gapLegend(legend) + '<p class="small pday" id="pday" aria-live="polite">Toca un día para ver el detalle.</p>'+habitsLine()+
+      '<details class="how"><summary>¿Cómo leo esto?</summary>'+(arms ? '' : '<p>La línea es el brazo que más dolió cada día, no un promedio.</p>')+'<p>Debajo, con las mismas fechas: cuánto de la sesión hiciste, hielo, calor y pausas activas (más oscuro, mejor; punteado, no aplicaba).</p></details>' : '<p class="small muted" style="margin:4px 0">Cuando registres el dolor de algunos días, aquí vas a ver cómo va. 0 es nada y 10 el peor.</p>')+'</div>';
 }
 
 function habitStats(days){
@@ -1560,14 +1624,15 @@ function viewProgreso(){
   const spends = sp.slice(0, showAllSp ? sp.length : 4).map(x => '<div class="spend"><span>'+esc(x.what || "Gusto")+' <span class="muted small">'+esc(fmtShort(x.d))+'</span></span><span class="sa"><b>'+money(x.amount)+'</b><button class="icon-btn" data-delspend="'+x.id+'">Quitar</button></span></div>').join("");
   const fundHtml = '<h2>Tu fondo</h2><div class="fund"><div class="fundtop"><b'+(fd.left < 0 ? ' class="neg"' : '')+'>'+money(fd.left)+'</b><span class="small muted">'+(fd.left < 0 ? "te pasaste" : "disponibles")+'</span></div>'+
     '<p class="small muted" style="margin:4px 0 0">'+(fd.earned || fd.spent ? 'Ganaste '+money(fd.earned)+' ('+fd.days+(fd.days === 1 ? " día" : " días")+' y '+fd.weeks+(fd.weeks === 1 ? " semana cumplida" : " semanas cumplidas")+') y gastaste '+money(fd.spent)+'.' : 'Todavía no has sumado. Tu primer día cumplido te da '+money(FUND_DAY)+'.')+'</p>'+
-    '<p class="small" style="margin:10px 0 0">'+money(FUND_DAY)+' por cada día que cuenta para tu meta y '+money(FUND_WEEK)+' por cada semana cumplida. <b>Tus gustos salen de aquí y de ningún otro lado.</b> Pásalo cada semana a un bolsillo aparte.</p>'+
+    '<details class="how"><summary>¿Cómo funciona?</summary><p>'+money(FUND_DAY)+' por cada día que cuenta para tu meta y '+money(FUND_WEEK)+' por cada semana cumplida. <b>Tus gustos salen de aquí y de ningún otro lado.</b> Pásalo cada semana a un bolsillo aparte.</p></details>'+
     (spends ? '<div class="spends">'+spends+'</div>'+(sp.length > 4 ? '<button class="icon-btn" data-allsp>'+(showAllSp ? "Ver menos" : "Ver todos ("+sp.length+")")+'</button>' : '') : '')+
     '<div class="row" style="margin-top:12px"><button class="btn" data-spend>Registrar un gusto</button></div></div>';
   return '<h1>Tus tendones, nivel '+L.n+'.</h1>'+
-    '<div class="fibers">'+fibersSvg(L.n)+
+    '<div class="fibers hero">'+fibersSvg(L.n)+
       '<div class="lvl"><b>'+LEVELS[L.n-1]+'</b><span class="small muted">'+L.x+' pts</span></div>'+
       '<div class="bar"><span style="width:'+pct+'%"></span></div>'+
-      '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p></div>'+
+      '<p class="small muted" style="margin:8px 0 0">'+(L.max ? "Nivel máximo. Ahora toca sostenerlo." : "Faltan "+(L.to - L.x)+" pts para "+LEVELS[L.n]+".")+'</p>'+
+      '<details class="how"><summary>¿Cómo sumo puntos?</summary><p>10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Aparte, tu fondo suma plata real. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p></details></div>'+
     '<div class="stats"><div class="stat"><b>'+st+'</b><span>'+(st === 1 ? "semana seguida" : "semanas seguidas")+'</span></div><div class="stat"><b>'+best+'</b><span>mejor racha</span></div><div class="stat"><b>'+wc+'/'+state.weeklyGoal+'</b><span>días esta semana</span></div></div>'+
     '<h2>Dolor y constancia, 28 días</h2>'+painHtml()+insight()+
     '<h2>Desde la última cita</h2>'+citaHtml("l")+
@@ -1575,8 +1640,7 @@ function viewProgreso(){
     '<div class="row"><button class="btn ghost" data-aicopy>Copiar para Claude</button></div>'+
 
     '<h2>Tus registros</h2><p class="small muted" style="margin-top:0">Toca un día para corregir o completar el dolor, el hielo, el calor y las pausas.</p>'+historyHtml()+
-    fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>'+
-    '<h2>Cómo sumas puntos</h2><p class="small muted">10 por ejercicio, 20 extra por sesión completa, 5 por guardar el registro del día y 50 por cada semana que cumples la meta. Aparte, tu fondo suma plata real. Un día cuenta para la meta si haces al menos la mitad de la sesión: fallar un día no rompe nada.</p>';
+    fundHtml+'<h2>Recompensas</h2>'+rw+'<div class="row">'+(all.length > shown.length || showAllRw ? '<button class="btn ghost" data-allrw>'+(showAllRw ? "Ver menos" : "Ver todas ("+all.length+")")+'</button>' : '')+'<button class="btn ghost" data-addrw>Agregar recompensa</button></div>';
 }
 
 function santiagoText(){

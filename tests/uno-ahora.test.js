@@ -17,7 +17,7 @@ server.listen(8799,async()=>{
  const one=p.locator('[data-one]');
  ok(await one.count()===1,'botón "Hacer uno ahora" visible');
  const first=await one.getAttribute('data-one');
- ok(/Hacer uno ahora: .+ · unos \d+ min/.test(await one.innerText()),'texto del botón: '+await one.innerText());
+ ok(/Hacer uno ahora:\s+.+ · unos \d+ min/.test(await one.innerText()),'texto del botón: '+await one.innerText());
  await p.screenshot({path:__dirname+'/shots/uno_hoy.png'});
  await one.click(); await p.waitForTimeout(250);
  ok(/Solo este ejercicio/.test(await p.locator('#flow').innerText()),'la hoja dice que es solo este');
