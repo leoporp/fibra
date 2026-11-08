@@ -467,6 +467,9 @@ b.warn{color:var(--warn)}
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad = n => String(n).padStart(2,"0");
+// El "día de Fibra" termina a las 4 a. m.: lo que hagas de madrugada cuenta para el día anterior.
+const DAY_CUT_H = 4;
+const fNow = () => new Date(Date.now() - DAY_CUT_H*3600e3);
 const key = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const parseKey = k => { const [y,m,d] = k.split("-").map(Number); return new Date(y,m-1,d); };
 const addDays = (d,n) => { const x = new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; };
@@ -659,7 +662,7 @@ function migrate(s){
     for (const e of s.exercises){ const se = SEED_EX.find(x => x.id === e.id);
       if (se && OLD_LOAD[e.id] && e.load === OLD_LOAD[e.id]){ e.name = se.name; e.load = se.load; e.notes = se.notes; e.perArm = !!PER_ARM[e.id]; } }
     s.equipV7 = true; }
-  if (!s.fundV8){ s.fundStart = s.fundStart || key(new Date()); s.spends = s.spends || [];
+  if (!s.fundV8){ s.fundStart = s.fundStart || key(fNow()); s.spends = s.spends || [];
     s.rewards = (s.rewards || []).filter(r => !OLD_RW.includes(r.text)); s.fundV8 = true; }
   if (!Array.isArray(s.spends)) s.spends = [];
   if (!Array.isArray(s.visits)) s.visits = [];
@@ -830,7 +833,7 @@ function accountSheet(){
 function exportBackup(){
   const blob = new Blob([JSON.stringify(state)], {type: "application/json"});
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "fibra-respaldo-" + key(new Date()) + ".json";
+  a.href = URL.createObjectURL(blob); a.download = "fibra-respaldo-" + key(fNow()) + ".json";
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
   toast("Respaldo descargado");
@@ -879,14 +882,14 @@ function sessionFor(tk){
 function weekCount(mon){ let c = 0; for (let i=0;i<7;i++) if (dayStats(key(addDays(mon,i))).counts) c++; return c; }
 const weekMet = mon => weekCount(mon) >= state.weeklyGoal;
 function streak(){
-  let m = monday(new Date()), s = weekMet(m) ? 1 : 0;
+  let m = monday(fNow()), s = weekMet(m) ? 1 : 0;
   m = addDays(m,-7);
   while (weekMet(m)){ s++; m = addDays(m,-7); }
   return s;
 }
 function bestStreak(){
   const ks = Object.keys(state.logs).sort(); if (!ks.length) return 0;
-  let m = monday(parseKey(ks[0])), end = monday(new Date()), best = 0, run = 0;
+  let m = monday(parseKey(ks[0])), end = monday(fNow()), best = 0, run = 0;
   while (m <= end){ if (weekMet(m)){ run++; best = Math.max(best,run); } else if (key(m) !== key(end)) run = 0; m = addDays(m,7); }
   return best;
 }
@@ -900,10 +903,10 @@ const threshold = n => 75*n*(n-1);
 const FUND_DAY = 5000, FUND_WEEK = 10000;
 const money = n => (n < 0 ? "−$" : "$") + Math.abs(Math.round(n)).toLocaleString("es-CO");
 function fund(){
-  const start = state.fundStart || key(new Date());
+  const start = state.fundStart || key(fNow());
   let days = 0, weeks = 0;
   for (const k of Object.keys(state.logs)) if (k >= start && dayStats(k).counts) days++;
-  for (let m = monday(parseKey(start)), end = monday(new Date()); m <= end; m = addDays(m, 7)) if (weekMet(m)) weeks++;
+  for (let m = monday(parseKey(start)), end = monday(fNow()); m <= end; m = addDays(m, 7)) if (weekMet(m)) weeks++;
   const spent = (state.spends || []).reduce((a, x) => a + (Number(x.amount) || 0), 0), earned = days*FUND_DAY + weeks*FUND_WEEK;
   return {days, weeks, earned, spent, left: earned - spent};
 }
@@ -915,7 +918,7 @@ function level(){
   return {n, x, max, from: threshold(n), to: max ? threshold(n) : threshold(n+1)};
 }
 function todayPlan(){
-  const tk = key(new Date()), sess = sessionFor(tk), log = state.logs[tk] || {done:{}};
+  const tk = key(fNow()), sess = sessionFor(tk), log = state.logs[tk] || {done:{}};
   return {sess, items: sess ? sess.items.filter(id => exById(id)) : [], done: id => !!(log.done && log.done[id])};
 }
 function nextUndone(afterId){
@@ -924,13 +927,13 @@ function nextUndone(afterId){
   return null;
 }
 function setDone(id, val){
-  const tk = key(new Date()), before = level().n, wasFull = dayStats(tk).full, wasCounts = dayStats(tk).counts, wasMet = weekMet(monday(new Date()));
+  const tk = key(fNow()), before = level().n, wasFull = dayStats(tk).full, wasCounts = dayStats(tk).counts, wasMet = weekMet(monday(fNow()));
   const readyBefore = rewardsSorted().filter(x => x.i.ok && !x.r.claimed).length;
   const sess = sessionFor(tk), log = ensureLog(tk);
   if (sess) log.session = sess.id;
   log.done[id] = val; morphSet.add(id);
   save();
-  const nowFull = dayStats(tk).full, after = level().n, met = weekMet(monday(new Date()));
+  const nowFull = dayStats(tk).full, after = level().n, met = weekMet(monday(fNow()));
   if (dayStats(tk).counts !== wasCounts || nowFull !== wasFull) weekMorph = true;
   if (nowFull && !wasFull) celebratePending = true;
   const readyNow = rewardsSorted().filter(x => x.i.ok && !x.r.claimed).length;
@@ -944,7 +947,7 @@ function setDone(id, val){
 }
 function loadNudge(e){
   if (!e || !e.sets) return false;
-  const today = new Date(), tk = key(today);
+  const today = fNow(), tk = key(today);
   if (e.progSnooze && e.progSnooze > tk) return false;
   const last = (e.loadHistory || []).slice(-1)[0], start = key(addDays(today,-14));
   if (last && last.d > start) return false;
@@ -998,7 +1001,7 @@ function tickTimer(){
     if (kind === "work") completeSet(id); else { drawFlow(); toast("A la siguiente serie"); }
   }
 }
-function setsDone(id){ const l = state.logs[key(new Date())]; return (l && l.sets && l.sets[id]) || 0; }
+function setsDone(id){ const l = state.logs[key(fNow())]; return (l && l.sets && l.sets[id]) || 0; }
 const steps = e => Math.max(1, (e.sets || 1) * (e.perArm ? 2 : 1));
 let repN = null, repKey = "", loadEdit = false, dotPop = "", repBump = false, regAnim = false;
 function fmtReps(e, arr){
@@ -1010,13 +1013,13 @@ function fmtReps(e, arr){
 const EFFORT = ["Muy fácil", "Bien", "Difícil", "No pude"];
 const effortTxt = n => ["se sintió muy fácil", "se sintió bien", "se sintió difícil", "no pudiste completarlo"][n-1] || "";
 function lastTime(e){
-  const tk = key(new Date()), ks = Object.keys(state.logs).filter(k => k < tk).sort().reverse();
+  const tk = key(fNow()), ks = Object.keys(state.logs).filter(k => k < tk).sort().reverse();
   for (const k of ks){ const l = state.logs[k]; if (l && ((l.reps && l.reps[e.id] && l.reps[e.id].length) || (l.loads && l.loads[e.id]) || (l.effort && l.effort[e.id]))) return {k, reps: (l.reps && l.reps[e.id]) || [], load: (l.loads && l.loads[e.id]) || "", effort: (l.effort && l.effort[e.id]) || 0}; }
   return null;
 }
 function completeSet(id, val){
   const e = exById(id); if (!e) return;
-  const log = ensureLog(key(new Date())); log.sets = log.sets || {};
+  const log = ensureLog(key(fNow())); log.sets = log.sets || {};
   const total = steps(e), n = log.sets[id] = Math.min((log.sets[id] || 0) + 1, total); dotPop = id + ":" + n;
   const got = val !== undefined ? val : (repN !== null && repKey === id + ":" + (n-1) ? repN : e.reps);
   if (e.reps){ log.reps = log.reps || {}; const arr = log.reps[id] = log.reps[id] || []; arr[n-1] = got; }
@@ -1037,7 +1040,7 @@ function drawFlow(){
   const run = tmr && tmr.id === e.id ? tmr : null;
   if (startNote && (setsDone(e.id) > 0 || isDone)) startNote = false;
   let h = (startNote ? '<p class="pill play">'+esc(bundleMsg())+'</p>' : '')+(oneOnly ? '<p class="small muted">Solo este ejercicio. Si tienes el brazo frío, mueve un poco las muñecas antes.</p>' : '<p class="small muted">Ejercicio '+(idx+1)+' de '+pl.items.length+' de hoy</p>');
-  const todayLog = state.logs[key(new Date())] || {}, todayReps = todayLog.reps && todayLog.reps[e.id], lt = lastTime(e);
+  const todayLog = state.logs[key(fNow())] || {}, todayReps = todayLog.reps && todayLog.reps[e.id], lt = lastTime(e);
   const unitTxt = e.unit === "seg" ? "segundos" : "repeticiones";
   const loadLine = loadEdit ? '<div class="loadedit"><input type="text" id="load-in" value="'+esc(e.load || "")+'" placeholder="Ej: mancuerna sin discos, 2 kg" aria-label="Carga"><button class="btn sm" data-loadsave>Guardar</button></div>'
     : '<p class="small loadline">Carga: <b>'+esc(e.load || "sin definir")+'</b> <button class="linkish" data-loadedit>Cambiar</button></p>';
@@ -1108,7 +1111,7 @@ function rewardsSorted(){
 const DRAFT_KEY = "fibra-draft";
 let draftDay = null;
 function getDraft(){
-  const tk = key(new Date());
+  const tk = key(fNow());
   if (draftDay && draftDay.key === tk && draftDay.touched) return draftDay;
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch(e){}
@@ -1124,7 +1127,7 @@ function draftDirty(){
 }
 function keepDraft(){ draftDay.touched = true; try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draftDay)); } catch(e){} updateSaveBar(); }
 function saveStatus(){
-  const log = state.logs[key(new Date())] || {};
+  const log = state.logs[key(fNow())] || {};
   if (draftDirty()) return '<span class="dirty">Cambios sin guardar</span>';
   if (log.savedAt) return "Guardado a las " + new Date(log.savedAt).toLocaleTimeString("es-CO", {hour:"numeric", minute:"2-digit"});
   return "Todavía no registras hoy";
@@ -1164,7 +1167,7 @@ function thumbInner(e){
 
 /* ---------- views ---------- */
 function viewHoy(){
-  const today = new Date(), tk = key(today), mon = monday(today);
+  const today = fNow(), tk = key(today), mon = monday(today);
   const sess = sessionFor(tk), log = state.logs[tk] || {done:{}};
   const fmt = today.toLocaleDateString("es-CO",{weekday:"long", day:"numeric", month:"long"});
   const items = sess ? sess.items.map(exById).filter(Boolean) : [];
@@ -1275,7 +1278,7 @@ function gearFor(sess){
   return out;
 }
 function preSheet(firstId){
-  const sess = sessionFor(key(new Date())); if (!sess){ openDetail(firstId); return; }
+  const sess = sessionFor(key(fNow())); if (!sess){ openDetail(firstId); return; }
   const gear = gearFor(sess).map(g => '<button class="chkrow" data-gear aria-pressed="false"><span class="box" aria-hidden="true"></span><span>'+esc(g)+'</span></button>').join("");
   const warm = WARMUP.map((w, i) => '<li><b>'+esc(w[0])+'.</b> '+esc(w[1])+'</li>').join("");
   openSheet('<div class="sh"><div><h3>Antes de empezar</h3><p class="muted small" style="margin:4px 0 0">'+esc(sessLabel(sess)+": "+sess.name)+'. Unos '+sessMin(sess)+' minutos más '+WARM_MIN+' de calentamiento.</p></div><button class="btn ghost sm" data-close>Cerrar</button></div>'+
@@ -1321,7 +1324,7 @@ function regForm(dr, px, status, dirty, saveLbl){
 
 /* editing past days */
 let editDay = null, histDays = 7, regOpen = false;
-const dayName = k => { const tk = key(new Date()), yk = key(addDays(new Date(), -1));
+const dayName = k => { const tk = key(fNow()), yk = key(addDays(fNow(), -1));
   const base = parseKey(k).toLocaleDateString("es-CO", {weekday:"long", day:"numeric", month:"long"}).replace(",", "");
   return k === tk ? "Hoy, " + base : k === yk ? "Ayer, " + base : base.charAt(0).toUpperCase() + base.slice(1); };
 function logSummary(l){
@@ -1367,7 +1370,7 @@ function pexHtml(){
 function drawPex(){ const b = $("#pastex"); if (b) b.innerHTML = pexHtml(); updateEditBar(); }
 function updateEditBar(){ const b = $("#e-save"), st = $("#e-status"); const dt = editDirty(); if (b) b.disabled = !dt; if (st) st.innerHTML = dt ? '<span class="dirty">Cambios sin guardar</span>' : "Sin cambios"; }
 function historyHtml(){
-  const today = new Date(), keys = Object.keys(state.logs).sort(), first = keys.length ? keys[0] : key(today);
+  const today = fNow(), keys = Object.keys(state.logs).sort(), first = keys.length ? keys[0] : key(today);
   let rows = "";
   for (let i = 0; i < histDays; i++){
     const k = key(addDays(today, -i)); if (i >= 7 && k < first) break;
@@ -1380,7 +1383,7 @@ function historyHtml(){
   return '<div class="days">'+rows+'</div>'+(more ? '<div class="row"><button class="btn ghost" data-morehist>Ver días anteriores</button></div>' : '');
 }
 function editDaySheet(k, keep){
-  if (k === key(new Date())){ tab = "hoy"; regOpen = true; closeSheet(); render(); syncNav(); const sb2 = $("#d-save"); if (sb2) sb2.scrollIntoView({block:"center"}); return; }
+  if (k === key(fNow())){ tab = "hoy"; regOpen = true; closeSheet(); render(); syncNav(); const sb2 = $("#d-save"); if (sb2) sb2.scrollIntoView({block:"center"}); return; }
   const l = state.logs[k] || {};
   editDay = keep && keep.key === k ? keep : {key: k, painL: l.painL, painR: l.painR, ice: !!l.ice, heat: !!l.heat, breaks: l.breaks, note: l.note || "", ex: pexInit(k)};
   const has = !!logSummary(l);
@@ -1403,7 +1406,7 @@ function commitEdit(){
     }
   }
   save(); const k = d.key; closeSheet();
-  const st1 = dayStats(k), wd = parseKey(k).toLocaleDateString("es-CO", {weekday:"long"}), yk = key(addDays(new Date(), -1)), when = k === yk ? "de ayer" : "del " + wd;
+  const st1 = dayStats(k), wd = parseKey(k).toLocaleDateString("es-CO", {weekday:"long"}), yk = key(addDays(fNow(), -1)), when = k === yk ? "de ayer" : "del " + wd;
   let msg = "Registro " + when + " guardado" + (!was && st1.logged ? ". +5" : "");
   if (lv0 < level().n) msg = "Subiste a nivel " + level().n + ": " + LEVELS[level().n-1];
   else if (!wk0 && weekMet(monday(parseKey(k)))) msg = "Meta de esa semana cumplida: +" + money(FUND_WEEK) + " a tu fondo";
@@ -1424,7 +1427,7 @@ function fibersSvg(n){
 }
 const PAIN_N = 28, P_TOP = 8, P_H = 110, B_TOP = P_TOP + P_H + 14, B_H = 22, LANE_H = 10, LANE_GAP = 7;
 function painSeries(){
-  const today = new Date(), out = [];
+  const today = fNow(), out = [];
   for (let i = 0; i < PAIN_N; i++){ const k = key(addDays(today, i-(PAIN_N-1))), l = state.logs[k] || {};
     const L = typeof l.painL === "number" ? l.painL : null, R = typeof l.painR === "number" ? l.painR : null;
     const st = dayStats(k);
@@ -1507,7 +1510,7 @@ function painHtml(){
 }
 
 function habitStats(days){
-  const today = new Date(); let ice = 0, heat = 0, bsum = 0, bn = 0, pl = [], prr = [];
+  const today = fNow(); let ice = 0, heat = 0, bsum = 0, bn = 0, pl = [], prr = [];
   for (let i = 0; i < days; i++){ const l = state.logs[key(addDays(today, -i))]; if (!l) continue;
     if (l.ice) ice++; if (l.heat) heat++; if (typeof l.breaks === "number" && l.breaks > 0){ bsum += l.breaks; bn++; }
     if (typeof l.painL === "number") pl.push(l.painL); if (typeof l.painR === "number") prr.push(l.painR); }
@@ -1520,7 +1523,7 @@ function habitsLine(){
   return '<p class="small" style="margin:6px 0 0">Últimas 2 semanas: hielo '+h.ice+(h.ice === 1 ? " día" : " días")+', calor '+h.heat+(h.heat === 1 ? " día" : " días")+(h.breaks !== null ? ", pausas activas "+f1c(h.breaks)+" de 5 en promedio" : "")+'.</p>';
 }
 function habitsHtml(){
-  const today = new Date(), N = 28; let ice = "", heat = "", brk = "", ses = "";
+  const today = fNow(), N = 28; let ice = "", heat = "", brk = "", ses = "";
   for (let i = N-1; i >= 0; i--){ const k = key(addDays(today, -i)), l = state.logs[k] || {}, st = dayStats(k);
     ses += '<i class="'+(st.full ? "on" : st.counts ? "l3" : st.done ? "l1" : "")+'"></i>';
     ice += '<i class="'+(l.ice ? "on" : "")+'"></i>'; heat += '<i class="'+(l.heat ? "on" : "")+'"></i>';
@@ -1532,7 +1535,7 @@ function habitsHtml(){
 }
 function insight(){
   const ks = Object.keys(state.logs); if (!ks.length) return "";
-  const thisMon = key(monday(new Date())), weeks = {};
+  const thisMon = key(monday(fNow())), weeks = {};
   for (const k of ks){ const w = key(monday(parseKey(k))); if (w === thisMon) continue; const s = dayStats(k); if (s.pain === null) continue; (weeks[w] = weeks[w] || []).push(s.pain); }
   const met = [], not = [];
   for (const w of Object.keys(weeks)){ const avg = weeks[w].reduce((a,b)=>a+b,0)/weeks[w].length; (weekMet(parseKey(w)) ? met : not).push(avg); }
@@ -1541,7 +1544,7 @@ function insight(){
   return '<div class="insight">Semanas cumpliendo la meta: dolor promedio de <b>'+f(a)+'</b>. Semanas sin cumplirla: <b>'+f(b)+'</b>. Es una correlación con pocos datos, no una prueba, pero vale la pena mirarla.</div>';
 }
 function viewProgreso(){
-  const L = level(), st = streak(), best = bestStreak(), wc = weekCount(monday(new Date()));
+  const L = level(), st = streak(), best = bestStreak(), wc = weekCount(monday(fNow()));
   const pct = L.max ? 100 : Math.round((L.x - L.from) / (L.to - L.from) * 100);
   let rw = "";
   const all = rewardsSorted(), firstLocked = all.findIndex(x => !x.i.ok && !x.r.claimed);
@@ -1597,7 +1600,7 @@ function santiagoText(){
 /* ---------- resumen para analizar en un chat de Claude (últimas 4 semanas) ---------- */
 const AI_DAYS = 28;
 function aiText(){
-  const today = new Date(), tk = key(today), from = key(addDays(today, -(AI_DAYS-1)));
+  const today = fNow(), tk = key(today), from = key(addDays(today, -(AI_DAYS-1)));
   const dl = k => parseKey(k).toLocaleDateString("es-CO", {weekday:"short", day:"numeric", month:"short"}).replace(/\./g, "");
   let t = "Datos de Fibra para analizar. Hoy es " + dl(tk) + " (" + tk + "). Periodo: últimas 4 semanas (" + from + " a " + tk + ").\n\n";
   t += "## Rutina actual\nMeta: " + state.weeklyGoal + " días por semana (un día cuenta si hago al menos la mitad de la sesión). Las sesiones rotan: cada día toca la siguiente a la última hecha.\n";
@@ -1653,7 +1656,7 @@ const activeEx = () => state.exercises.filter(e => !e.retired);
 const usedIn = e => state.sessions.map((s,i) => s.items.includes(e.id) ? letter(i) : null).filter(Boolean);
 const avgOf = a => a.length ? a.reduce((x,y) => x+y, 0)/a.length : null;
 function citaData(){
-  const today = new Date(), tk = key(today), lv = lastVisit();
+  const today = fNow(), tk = key(today), lv = lastVisit();
   const from = lv ? key(addDays(parseKey(lv.d), 1)) : key(addDays(today, -20));
   const keys = []; for (let d = parseKey(from); key(d) <= tk; d = addDays(d, 1)) keys.push(key(d));
   const c = {n: keys.length, trained: 0, pl: [], pr: [], painDays: 0, ice: 0, heat: 0, brk: [], notes: [], hard: {}, inc: {}, done: {}, loads: []};
@@ -1737,7 +1740,7 @@ function fisioCard(e){
       '<div class="fthumb" aria-hidden="true">'+thumbInner(e)+'</div></div>'+
     '<p class="fcrx">'+esc(rx(e) || "Sin dosis definida")+(e.perArm ? '<span class="small muted"> · cada brazo</span>' : '')+'</p>'+
     '<p class="small muted" style="margin:0">'+lastTxt+(c.n ? ' Lo hizo '+doneN+(doneN === 1 ? ' vez' : ' veces')+(lastVisit() ? ' desde la última cita.' : ' en las últimas 3 semanas.') : '')+'</p>'+
-    (e.pNote ? '<p class="small fprev">Tu indicación del '+esc(fmtShort(e.pNoteD || key(new Date())))+': '+esc(e.pNote)+'</p>' : '')+
+    (e.pNote ? '<p class="small fprev">Tu indicación del '+esc(fmtShort(e.pNoteD || key(fNow())))+': '+esc(e.pNote)+'</p>' : '')+
     '<div class="fq"><span class="lbl">¿Este se lo pusiste tú?</span><div class="segs two" role="group">'+seg("fsrc", "s", "Sí, es mío", src === "s")+seg("fsrc", "ai", "No, es sugerido", src === "ai")+'</div>'+
       (LEO_CREE[e.id] && !src ? '<p class="small muted" style="margin:-2px 0 0">Leo cree que este es tuyo.</p>' : '')+'</div>'+
     '<div class="fq"><span class="lbl">¿Cómo queda?</span><div class="segs three" role="group">'+seg("fdec", "ok", "Va así", d.dec === "ok")+seg("fdec", "adj", "Ajustar", d.dec === "adj")+seg("fdec", "rm", "Quitar", d.dec === "rm")+'</div></div>'+
@@ -1830,7 +1833,7 @@ function drawFisioSum(){
   $("#sheet").classList.add("full"); fisioOn = true;
 }
 function fisioSave(){
-  const tk = key(new Date()), changes = fisioChanges();
+  const tk = key(fNow()), changes = fisioChanges();
   for (const e of fisioOrder()){
     const d = fisio.ex[e.id]; if (!d) continue;
     if (d.src) e.src = d.src;
@@ -2060,7 +2063,7 @@ function drawDetail(){
   html += '<div class="flow" id="flow" hidden></div>';
   if (loadNudge(e)) html += '<div class="nudge"><b>Podrías estar listo para más carga.</b> Llevas dos semanas haciéndolo con dolor bajo. Pregúntale a Santiago antes de subir.'+
     '<div class="row" style="margin-top:8px"><button class="btn sm" data-edit="'+e.id+'">Ya la subí</button><button class="btn ghost sm" data-snooze="'+e.id+'">Recordarme en una semana</button></div></div>';
-  if (e.pNote) html += '<h4>Indicación de Santiago</h4><p class="fprev" style="padding:8px 12px">'+esc(e.pNote)+' <span class="small muted">('+esc(fmtShort(e.pNoteD || key(new Date())))+')</span></p>';
+  if (e.pNote) html += '<h4>Indicación de Santiago</h4><p class="fprev" style="padding:8px 12px">'+esc(e.pNote)+' <span class="small muted">('+esc(fmtShort(e.pNoteD || key(fNow())))+')</span></p>';
   if (e.notes) html += '<h4>Cómo se hace</h4><p>'+esc(e.notes)+'</p>';
   html += '<h4>Tus fotos y videos</h4>' + mediaHtml(e);
   html += '<div class="row" style="margin-top:20px"><button class="btn ghost" data-edit="'+e.id+'">Editar ejercicio</button></div>';
@@ -2112,7 +2115,7 @@ function saveExercise(id){
     unit: $("#f-seg").checked ? "seg" : "reps", perArm: $("#f-arm").checked, load, notes: $("#f-notes").value.trim(), confirmed: $("#f-conf").checked });
   if (!e.loadHistory) e.loadHistory = [];
   if (load && load !== prevLoad){
-    const tk = key(new Date()), last = e.loadHistory[e.loadHistory.length-1];
+    const tk = key(fNow()), last = e.loadHistory[e.loadHistory.length-1];
     if (last && last.d === tk) last.load = load; else e.loadHistory.push({d: tk, load});
     if (prevLoad) toast("Carga actualizada: " + prevLoad + " → " + load);
   }
@@ -2253,7 +2256,7 @@ async function handleFile(file, exId){
     const r = {id: path};
     const e = exById(exId);
     if (!e){ try { await sb.storage.from("media").remove([path]); } catch(x){} return; }
-    e.media = e.media || []; e.media.push({id: r.id, kind, d: key(new Date())}); save();
+    e.media = e.media || []; e.media.push({id: r.id, kind, d: key(fNow())}); save();
     toast(kind === "video" ? "Video guardado" : "Foto guardada");
     if (detailId === exId && sheetOpen) drawDetail();
     else if (fisioOn && fisio){ fisio.rec = null; redrawCard(exId); }
@@ -2307,7 +2310,7 @@ document.addEventListener("click", ev => {
     if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez: se pierde lo que marcaste"; return; }
     fisio = null; keepFisio(); closeSheet(); toast("Revisión descartada"); return; }
   if (d.go){ if (sheetOpen) closeSheet(); goTab(d.go); return; }
-  if (d.pick){ const log = ensureLog(key(new Date())); log.session = d.pick; save(); render(); return; }
+  if (d.pick){ const log = ensureLog(key(fNow())); log.session = d.pick; save(); render(); return; }
   if (d.med){ const dr = drOf(t); dr[d.med] = !dr[d.med]; t.classList.toggle("on", dr[d.med]); t.setAttribute("aria-pressed", String(dr[d.med])); touched(t); return; }
   if (d.breaks){ const dr = drOf(t), v = Number(d.breaks); dr.breaks = dr.breaks === v ? undefined : v;
     t.closest(".pr").querySelectorAll("[data-breaks]").forEach(b => { const on = Number(b.dataset.breaks) === dr.breaks; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); }); touched(t); return; }
@@ -2340,35 +2343,35 @@ document.addEventListener("click", ev => {
     else { closeSheet(); toast(r.msg || "Hecho. +10"); window.scrollTo(0,0); }
     return;
   }
-  if (d.undone){ const lg = ensureLog(key(new Date())); if (lg.sets) lg.sets[d.undone] = 0; if (lg.reps) delete lg.reps[d.undone]; setDone(d.undone, false); drawFlow(); return; }
+  if (d.undone){ const lg = ensureLog(key(fNow())); if (lg.sets) lg.sets[d.undone] = 0; if (lg.reps) delete lg.reps[d.undone]; setDone(d.undone, false); drawFlow(); return; }
   if (d.setdone){ unlockAudio(); completeSet(d.setdone); return; }
   if (d.rep){ const e = exById(detailId); if (e){ repN = Math.max(0, Math.min((e.reps || 0) + 20, (repN || 0) + Number(d.rep))); repBump = true; drawFlow(); } return; }
   if (d.early !== undefined){ if (tmr && tmr.kind === "work"){ const id = tmr.id, el = Math.max(1, Math.round((Date.now() - (tmr.endsAt - tmr.total*1000))/1000)); stopTimer(); completeSet(id, Math.min(el, tmr ? tmr.total : el)); } return; }
-  if (d.effort){ const e = exById(detailId); if (e){ const lg = ensureLog(key(new Date())), v = Number(d.effort); lg.effort = lg.effort || {};
+  if (d.effort){ const e = exById(detailId); if (e){ const lg = ensureLog(key(fNow())), v = Number(d.effort); lg.effort = lg.effort || {};
       if (lg.effort[e.id] === v) delete lg.effort[e.id]; else lg.effort[e.id] = v;
       if (e.load){ lg.loads = lg.loads || {}; if (!lg.loads[e.id]) lg.loads[e.id] = e.load; }
       save(); drawFlow(); if (lg.effort[e.id]) toast("Anotado: " + EFFORT[v-1].toLowerCase()); } return; }
   if (d.loadedit !== undefined){ loadEdit = true; drawFlow(); const i = $("#load-in"); if (i){ i.focus(); i.select(); } return; }
   if (d.loadsave !== undefined){ const e = exById(detailId), v = ($("#load-in").value || "").trim(); loadEdit = false;
-    if (e && v && v !== e.load){ const prev = e.load || ""; e.load = v; e.loadHistory = e.loadHistory || []; const tk = key(new Date()), last = e.loadHistory[e.loadHistory.length-1];
+    if (e && v && v !== e.load){ const prev = e.load || ""; e.load = v; e.loadHistory = e.loadHistory || []; const tk = key(fNow()), last = e.loadHistory[e.loadHistory.length-1];
       if (last && last.d === tk) last.load = v; else e.loadHistory.push({d: tk, load: v});
       const lg = state.logs[tk]; if (lg && ((lg.loads && lg.loads[e.id]) || (lg.done && lg.done[e.id]) || (lg.sets && lg.sets[e.id]))){ lg.loads = lg.loads || {}; lg.loads[e.id] = v; }
       save(); toast(prev ? "Carga: " + prev + " → " + v : "Carga guardada"); const hp = $("#sheet .sh p"); if (hp) hp.textContent = rx(e); }
     drawFlow(); return; }
   if (d.work){ unlockAudio(); const e = exById(d.work); if (e) startTimer(e.id, "work", e.reps); return; }
   if (d.skiprest !== undefined || d.stoptmr !== undefined){ stopTimer(); drawFlow(); return; }
-  if (d.snooze){ const e = exById(d.snooze); if (e){ e.progSnooze = key(addDays(new Date(), 7)); save(); drawDetail(); toast("Te lo recuerdo en una semana"); } return; }
+  if (d.snooze){ const e = exById(d.snooze); if (e){ e.progSnooze = key(addDays(fNow(), 7)); save(); drawDetail(); toast("Te lo recuerdo en una semana"); } return; }
   if (d.rest){ state.restSec = Math.min(180, Math.max(15, (state.restSec || 60) + Number(d.rest))); save(); render(); return; }
   if (d.next !== undefined){ stopTimer(); startNote = false; const nx = nextUndone(detailId); if (nx) openDetail(nx); return; }
   if (d.one){ startNote = false; oneOnly = true; openDetail(d.one); return; }
-  if (d.detail){ oneOnly = false; if (d.start !== undefined && dayStats(key(new Date())).done === 0){ preSheet(d.detail); return; } startNote = d.start !== undefined; openDetail(d.detail); return; }
+  if (d.detail){ oneOnly = false; if (d.start !== undefined && dayStats(key(fNow())).done === 0){ preSheet(d.detail); return; } startNote = d.start !== undefined; openDetail(d.detail); return; }
   if (d.gostart){ oneOnly = false; startNote = true; openDetail(d.gostart); return; }
   if (d.gear !== undefined){ const on = t.getAttribute("aria-pressed") !== "true"; t.setAttribute("aria-pressed", String(on)); t.classList.toggle("on", on); return; }
   if (d.spend !== undefined){ spendForm(); return; }
   if (d.savespend !== undefined){
     const amt = Math.round(Number(($("#sp-amt").value || "").replace(/[^0-9]/g, "")) || 0), what = $("#sp-what").value.trim();
     if (!amt){ $("#sp-amt").focus(); toast("¿Cuánto gastaste?"); return; }
-    state.spends = state.spends || []; state.spends.push({id: uid(), d: key(new Date()), amount: amt, what}); save(); closeSheet();
+    state.spends = state.spends || []; state.spends.push({id: uid(), d: key(fNow()), amount: amt, what}); save(); closeSheet();
     const left = fund().left; toast(left < 0 ? "Guardado. Te pasaste por " + money(-left) : "Guardado. Te quedan " + money(left)); return;
   }
   if (d.delspend){
@@ -2437,7 +2440,7 @@ document.addEventListener("click", ev => {
     if (!text){ $("#r-text").focus(); return; }
     state.rewards.push({id: uid(), text, type: $("#r-type").value, n}); save(); closeSheet(); return;
   }
-  if (d.claim){ const r = state.rewards.find(x => x.id === d.claim); if (r){ r.claimed = key(new Date()); save(); render(); toast("Disfrútala. Te la ganaste."); } return; }
+  if (d.claim){ const r = state.rewards.find(x => x.id === d.claim); if (r){ r.claimed = key(fNow()); save(); render(); toast("Disfrútala. Te la ganaste."); } return; }
   if (d.delrw){
     if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez"; return; }
     state.rewards = state.rewards.filter(r => r.id !== d.delrw); save(); render(); return;
