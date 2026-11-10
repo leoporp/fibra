@@ -20,6 +20,7 @@
 :root{
   --bg:#EEF0EB; --surface:#FFFFFF; --ink:#1F1B19; --muted:#69625D; --line:#DCD8D1;
   --accent:#9A3F27; --accent-ink:#FFFFFF; --soft:#F4E4DC; --fiber:#B8741E; --cue:#3D7C83; --warn:#C4161C; --warn-soft:#FBE3E1; --armL:#2A6FB0; --armR:#9A3F27;
+  --fiber-ink:#8A5510; --cue-ink:#2F6B72;
   --body:#3A4048;
   --shadow:0 1px 2px rgba(31,27,25,.05),0 6px 18px -6px rgba(31,27,25,.10);
   --hero:#2B201C;
@@ -31,13 +32,13 @@
   :root:not([data-theme="light"]){
     --bg:#131615; --surface:#1C201F; --ink:#ECE7E3; --muted:#A49D97; --line:#303634;
     --accent:#E58A68; --accent-ink:#1B0E09; --soft:#3A2722; --fiber:#E8B25E; --cue:#7FC4CA; --warn:#FF7B72; --warn-soft:#3B1F1E; --armL:#4A90E2; --armR:#DB6F4C;
-    --body:#C9CED3; --shadow:none; --hero:#2A1C17;
+    --body:#C9CED3; --shadow:none; --hero:#2A1C17; --fiber-ink:#E8B25E; --cue-ink:#7FC4CA;
   }
 }
 :root[data-theme="dark"]{
   --bg:#131615; --surface:#1C201F; --ink:#ECE7E3; --muted:#A49D97; --line:#303634;
   --accent:#E58A68; --accent-ink:#1B0E09; --soft:#3A2722; --fiber:#E8B25E; --cue:#7FC4CA; --warn:#FF7B72; --warn-soft:#3B1F1E; --armL:#4A90E2; --armR:#DB6F4C;
-  --body:#C9CED3; --shadow:none; --hero:#2A1C17;
+  --body:#C9CED3; --shadow:none; --hero:#2A1C17; --fiber-ink:#E8B25E; --cue-ink:#7FC4CA;
 }
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body-font);font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px)}
@@ -219,7 +220,7 @@ section{margin-bottom:6px}
 .thumb img{aspect-ratio:22/15;object-fit:cover}
 .thumb .ph{font-size:13px;line-height:1.2;text-align:center;padding:4px}
 .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-top:6px}
-.tag.pend{border-color:var(--fiber);color:var(--fiber)}
+.tag.pend{border-color:var(--fiber);color:var(--fiber-ink)}
 
 /* illustrations */
 .ill{display:block;width:100%;height:auto}
@@ -306,7 +307,7 @@ textarea.note{width:100%;min-height:70px;margin-top:8px;border:1px solid var(--l
 .rw{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
 .rw .st{font-size:13px;color:var(--muted)}
 .rw.ready{border-color:var(--fiber);background:var(--soft)}
-.rw.ready .st{color:var(--fiber);font-weight:700}
+.rw.ready .st{color:var(--fiber-ink);font-weight:700}
 .rw.claimed{opacity:.6}
 .rw .act{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 
@@ -318,6 +319,7 @@ textarea.note{width:100%;min-height:70px;margin-top:8px;border:1px solid var(--l
 .exrow > div{flex:1;min-width:0}
 .sl{margin:8px 0 0;padding-left:22px}
 .sl li{margin:3px 0}
+.sl .linkish{vertical-align:top}
 .hist{font-size:14px;color:var(--muted);margin-top:6px}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:18px}
 textarea.out{width:100%;min-height:160px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);font-size:15px;resize:vertical}
@@ -448,14 +450,14 @@ b.warn{color:var(--warn)}
 .stepper.sm .muted{font-size:14px}
 .frow{display:flex;align-items:center;gap:10px;margin-top:12px}
 .fbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:18px -16px calc(-24px - env(safe-area-inset-bottom,0px));padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:2}
-.tag.src{border-color:var(--cue);color:var(--cue)}
+.tag.src{border-color:var(--cue);color:var(--cue-ink)}
 
 /* rediseño: tarjeta héroe de la sesión, semana y aviso único */
 .card-like,.item,.pain,.chart,.fibers,.stat,.fund,.habits,.rw,.dayrow,.cita-sum,.week-card{box-shadow:var(--shadow)}
 .item,.pain,.chart,.fund,.habits,.cita-sum{border-radius:18px}
 .fibers{border-radius:22px}
 .stat{border-radius:16px;padding:14px 12px}
-.hero{--accent:#E58A68;--accent-ink:#1B0E09;--ink:#F6EFEA;--muted:rgba(246,239,234,.66);--line:rgba(246,239,234,.17);--fiber:#E8B25E;--bg:rgba(246,239,234,.08);--surface:rgba(246,239,234,.06);
+.hero{--accent:#E58A68;--accent-ink:#1B0E09;--ink:#F6EFEA;--muted:rgba(246,239,234,.66);--line:rgba(246,239,234,.17);--fiber:#E8B25E;--fiber-ink:#E8B25E;--cue-ink:#7FC4CA;--bg:rgba(246,239,234,.08);--surface:rgba(246,239,234,.06);
   background:var(--hero);color:var(--ink);border-radius:26px;padding:18px 18px 16px;margin:0 0 14px;position:relative;overflow:hidden;box-shadow:0 18px 40px -22px rgba(43,32,28,.55)}
 .hero::before{content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(229,138,104,.22),transparent);pointer-events:none}
 .hero .eyebrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0}
@@ -750,7 +752,7 @@ const PER_ARM = {ecc_ext:1, iso_ext:1, flex:1, prosup:1, radial:1, grip:1, pinch
 const OLD_LOAD = {ecc_ext:"1 kg", iso_ext:"1 kg o la otra mano", flex:"1 kg", prosup:"Martillo o mancuerna tomada de un extremo", radial:"Martillo", grip:"Pelota antiestrés", fingext:"Liga de pelo o banda pequeña", pinch:"Pelota o plastilina", tri_push:"Banda ligera", tri_oh:"2 kg", row:"Banda", extrot:"Banda ligera"};
 const COMPL = {flex:1, prosup:1, radial:1, grip:1, fingext:1, pinch:1, tri_push:1, tri_oh:1, row:1, extrot:1};
 const SEC_PER_REP = {dbhold:3, platepinch:3, ecc_ext:5, flex:3, prosup:4, radial:3.5, grip:7, fingext:2, pinch:4, tri_push:3, tri_oh:3.5, row:3.5, extrot:3.5};
-function blank(){ return {v:8, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
+function blank(){ return {v:9, updatedAt:0, weeklyGoal:4, restSec:60, exercises:[], sessions:[], logs:{}, rewards:[]}; }
 function migrate(s){
   s = Object.assign(blank(), s);
   if (!s.sessions || !s.sessions.length){
@@ -779,7 +781,8 @@ function migrate(s){
   if (!Array.isArray(s.spends)) s.spends = [];
   if (!Array.isArray(s.visits)) s.visits = [];
   applyFichas(s.exercises);
-  s.v = 8;
+  freezeDays(s);
+  s.v = 9;
   return s;
 }
 let state = blank(), storedV = 0;
@@ -796,33 +799,22 @@ function applyMorphs(){
     if (late) el.style.transitionDelay = (180 + j*40) + "ms";
     el.style.d = 'path("' + to + '")'; el.setAttribute("d", to); el.setAttribute("class", el.dataset.cls); el.setAttribute("stroke-width", el.dataset.sw); el.removeAttribute("data-to"); });
 }
-let tab = "hoy", showAllRw = false, showAllSp = false, writing = false, pendingWrite = false, timer = null;
-const CUR_V = 8, CFG = window.FIBRA_CONFIG || {};
-let sb = null, session = null, lastSync = 0, dirty = false;
+let tab = "hoy", showAllRw = false, showAllSp = false, timer = null;
+const CUR_V = 9, CFG = window.FIBRA_CONFIG || {};
+let sb = null, session = null, lastSync = 0, syncing = false, syncAgain = false;
 const cloudReady = () => !!(sb && session);
 const canMedia = cloudReady;
 const SYNC_TXT = {local:"Solo en este dispositivo", nologin:"Solo en este dispositivo", syncing:"Sincronizando…", ok:"Guardado en la nube", offline:"Sin internet: se sube al volver", error:"No se pudo guardar en la nube"};
 function setSync(k){ const b = $("#sync"); if (b) b.textContent = SYNC_TXT[k] || k; }
 const netDown = err => navigator.onLine === false || /fetch|network|load failed/i.test(String((err && err.message) || err || ""));
 function persistLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {} }
-function save(){ state.updatedAt = Date.now(); persistLocal(); dirty = true; clearTimeout(timer); timer = setTimeout(push, 700); }
-async function push(){
-  if (!cloudReady()){ setSync(sb ? "nologin" : "local"); return; }
-  if (writing){ pendingWrite = true; return; }
-  writing = true; setSync("syncing");
-  let error = null;
-  try { ({ error } = await sb.from("fibra_state").upsert({ user_id: session.user.id, data: JSON.parse(JSON.stringify(state)), updated_at: new Date().toISOString() })); }
-  catch(e){ error = e; }
-  writing = false;
-  if (error) setSync(netDown(error) ? "offline" : "error");
-  else { dirty = false; lastSync = Date.now(); setSync("ok"); markSynced(); }
-  if (pendingWrite){ pendingWrite = false; push(); }
-}
+function save(){ freezeDays(state); state.updatedAt = Math.max(Date.now(), (state.updatedAt || 0) + 1); persistLocal(); clearTimeout(timer); timer = setTimeout(sync, 700); }
 function adopt(d){ const keepD = draftDay && draftDirty(); state = migrate(JSON.parse(JSON.stringify(d))); persistLocal(); if (!keepD) draftDay = null; }
 const SYNC_UID = "fibra-synced-uid";
 const syncedUid = () => { try { return localStorage.getItem(SYNC_UID); } catch(e){ return null; } };
 const markSynced = () => { try { if (session) localStorage.setItem(SYNC_UID, session.user.id); } catch(e){} };
-/* Solo la primera vez que esta cuenta se sincroniza en este dispositivo: si la nube es más nueva pero este dispositivo tiene días o gustos que la nube no tiene, no se pierden */
+/* La primera vez que esta cuenta se sincroniza en este dispositivo manda la nube, pero los días, ejercicios marcados y gustos
+   que solo estaban en el dispositivo no se pierden. Nunca se pisa la nube con lo que había aquí antes de entrar. */
 function mergeLocal(local){
   let added = false;
   const REG = ["painL","painR","breaks","ice","heat","note","savedAt"];
@@ -839,24 +831,105 @@ function mergeLocal(local){
   if (local.fundStart && (!state.fundStart || local.fundStart < state.fundStart)){ state.fundStart = local.fundStart; added = true; }
   return added;
 }
+/* ---------- sincronización entre dispositivos ----------
+   Este dispositivo recuerda lo último que supo que estaba en la nube ("base"). Antes de subir, mira la nube:
+   - si solo cambió este dispositivo, sube; si solo cambió la nube, la adopta;
+   - si cambiaron los dos (por ejemplo, entrenaste sin internet en el celular y editaste algo en el computador),
+     junta los cambios de cada lado en vez de que el último pise al otro. */
+const BASE_KEY = "fibra-base";
+let baseMem = null;
+function getBase(uid){
+  if (!baseMem){ try { baseMem = JSON.parse(localStorage.getItem(BASE_KEY) || "null"); } catch(e){ baseMem = null; } }
+  return baseMem && baseMem.uid === uid && baseMem.state ? baseMem.state : null;
+}
+function setBase(uid, st){
+  baseMem = {uid, state: st};
+  try { localStorage.setItem(BASE_KEY, JSON.stringify(baseMem)); } catch(e){ try { localStorage.removeItem(BASE_KEY); } catch(x){} }
+}
+const plain = o => JSON.parse(JSON.stringify(o));
+const isObj = v => v !== null && typeof v === "object" && !Array.isArray(v);
+function same(a, b){
+  if (a === b) return true;
+  if (a == null || b == null || typeof a !== "object" || typeof b !== "object") return false;
+  const arr = Array.isArray(a); if (arr !== Array.isArray(b)) return false;
+  if (arr) return a.length === b.length && a.every((x, i) => same(x, b[i]));
+  const ka = Object.keys(a); if (ka.length !== Object.keys(b).length) return false;
+  return ka.every(k => Object.prototype.hasOwnProperty.call(b, k) && same(a[k], b[k]));
+}
+/* Las listas de cosas con identidad (ejercicios, sesiones, gustos: "id"; historial de cargas y citas: fecha "d") se juntan elemento por elemento. */
+function listKey(lists){
+  return ["id", "d"].find(f => lists.every(a => { const seen = new Set(); return a.every(x => isObj(x) && typeof x[f] === "string" && !seen.has(x[f]) && !!seen.add(x[f])); })) || null;
+}
+/* Mezcla de tres vías: base = lo último sincronizado, mine = este dispositivo, theirs = la nube. Todo en JSON plano. */
+function merge3(base, mine, theirs){
+  if (same(mine, theirs) || same(base, theirs)) return mine;   // iguales, o solo cambió este dispositivo
+  if (same(base, mine)) return theirs;                          // solo cambió la nube
+  if (mine === undefined) return theirs;                        // uno lo borró y el otro lo cambió: se conserva
+  if (theirs === undefined) return mine;
+  if (isObj(mine) && isObj(theirs)){
+    const b = isObj(base) ? base : {}, out = {};
+    for (const k of new Set(Object.keys(mine).concat(Object.keys(theirs)))){ const v = merge3(b[k], mine[k], theirs[k]); if (v !== undefined) out[k] = v; }
+    return out;
+  }
+  if (Array.isArray(mine) && Array.isArray(theirs)){
+    const b = Array.isArray(base) ? base : [], f = listKey([b, mine, theirs]);
+    if (f){
+      const idx = a => new Map(a.map(x => [x[f], x])), B = idx(b), M = idx(mine), T = idx(theirs), out = [];
+      for (const x of mine){ const v = merge3(B.get(x[f]), x, T.get(x[f])); if (v !== undefined) out.push(v); }
+      for (const x of theirs){ if (M.has(x[f])) continue; const v = merge3(B.get(x[f]), undefined, x); if (v !== undefined) out.push(v); }
+      if (f === "d") out.sort((x, y) => x.d < y.d ? -1 : x.d > y.d ? 1 : 0);
+      return out;
+    }
+    if ([b, mine, theirs].every(a => a.every(x => typeof x === "string"))){   // listas de ids: lo que el otro quitó sale y lo que agregó entra
+      const Bs = new Set(b), Ms = new Set(mine), Ts = new Set(theirs);
+      return mine.filter(x => !(Bs.has(x) && !Ts.has(x))).concat(theirs.filter(x => !Ms.has(x) && !Bs.has(x)));
+    }
+  }
+  return mine;   // el mismo dato cambiado en los dos lados: gana este dispositivo
+}
 function refreshOpen(){ if (!sheetOpen) render(); else if (detailId) drawDetail(); }
-async function pull(){
-  if (!cloudReady() || writing) return;
-  setSync("syncing");
-  let data = null, error = null;
-  try { ({ data, error } = await sb.from("fibra_state").select("data").eq("user_id", session.user.id).maybeSingle()); }
-  catch(e){ error = e; }
-  if (error){ setSync(netDown(error) ? "offline" : "error"); return; }
-  const remote = data && data.data;
-  if (remote && (remote.updatedAt || 0) > (state.updatedAt || 0)){
-    const local = state, first = syncedUid() !== session.user.id;
-    adopt(remote); const merged = first && mergeLocal(local); if (merged) persistLocal();
-    dirty = false; lastSync = Date.now(); setSync("ok"); refreshOpen();
-    if (merged || (remote.v || 1) < CUR_V) save(); else markSynced();
-  } else if (!remote || (state.updatedAt || 0) > (remote.updatedAt || 0)){
-    if (!state.updatedAt) state.updatedAt = Date.now();
-    persistLocal(); await push();
-  } else { dirty = false; lastSync = Date.now(); setSync("ok"); markSynced(); }
+async function sync(){
+  if (!cloudReady()){ setSync(sb ? "nologin" : "local"); return; }
+  if (syncing){ syncAgain = true; return; }
+  syncing = true; syncAgain = false; clearTimeout(timer); setSync("syncing");
+  const me = session.user.id; let err = null, sent = 0;
+  try {
+    const got = await sb.from("fibra_state").select("data").eq("user_id", me).maybeSingle();
+    if (got.error) throw got.error;
+    if (cloudReady() && session.user.id === me){
+      const remote = got.data && got.data.data, base = getBase(me);
+      const R = remote ? (remote.updatedAt || 0) : 0, L = state.updatedAt || 0;
+      let up = !remote, changed = false;
+      // adoptar la nube: desde ese momento la base es la nube (aunque después falle la subida)
+      const take = () => { adopt(remote); setBase(me, plain(remote)); changed = true; if ((remote.v || 1) < CUR_V) up = true; };
+      if (remote && base){
+        const B = base.updatedAt || 0;
+        if (R !== B && L !== B){ adopt(merge3(base, plain(state), migrate(plain(remote)))); state.updatedAt = Math.max(L, R) + 1; up = changed = true; }
+        else if (R !== B) take();
+        else up = L !== B;
+      } else if (remote){
+        if (syncedUid() !== me){ const local = state; take(); markSynced(); if (mergeLocal(local)) up = true; }
+        else if (R > L) take();
+        else if (L > R) up = true;
+        else setBase(me, plain(remote));
+      }
+      if (changed) refreshOpen();
+      if (up){
+        freezeDays(state);
+        if (!state.updatedAt || state.updatedAt <= R) state.updatedAt = Math.max(Date.now(), R + 1);
+        persistLocal();
+        const snap = plain(state);
+        const put = await sb.from("fibra_state").upsert({ user_id: me, data: snap, updated_at: new Date().toISOString() });
+        if (put.error) throw put.error;
+        setBase(me, snap); sent = snap.updatedAt;
+      } else sent = state.updatedAt;
+      lastSync = Date.now(); markSynced();
+    }
+  } catch(e){ err = e; }
+  syncing = false;
+  if (cloudReady()) setSync(err ? (netDown(err) ? "offline" : "error") : "ok");
+  // si algo cambió mientras se sincronizaba, se vuelve a sincronizar
+  if (syncAgain || (!err && sent && state.updatedAt !== sent)){ clearTimeout(timer); timer = setTimeout(sync, 300); }
 }
 async function initCloud(){
   const make = window.supabase && window.supabase.createClient;
@@ -867,16 +940,16 @@ async function initCloud(){
     session = (data && data.session) || null;
     sb.auth.onAuthStateChange((ev, s) => {
       session = s || null;
-      if (ev === "SIGNED_IN") setTimeout(pull, 0);
+      if (ev === "SIGNED_IN") setTimeout(sync, 0);
       if (ev === "SIGNED_OUT"){ setSync("nologin"); setTimeout(refreshOpen, 0); }
     });
-    if (session) await pull(); else setSync("nologin");
+    if (session) await sync(); else setSync("nologin");
     refreshOpen();
   } catch(e){ sb = null; session = null; setSync("local"); }
 }
-window.addEventListener("online", () => { if (cloudReady()) (dirty ? push() : pull()); });
+window.addEventListener("online", () => { if (cloudReady()) sync(); });
 window.addEventListener("offline", () => { if (cloudReady()) setSync("offline"); });
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && cloudReady()) pull(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && cloudReady()) sync(); });
 
 /* signed URLs for private media */
 const urlCache = {};
@@ -924,7 +997,7 @@ async function doAuth(kind){
     const res = kind === "up" ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
     if (res.error){ msg(authErr(res.error), true); return; }
     if (!res.data || !res.data.session){ msg("Te llegó un correo para confirmar la cuenta. Ábrelo, vuelve aquí y dale Entrar."); return; }
-    session = res.data.session; closeSheet(); toast("Listo. Tus datos ahora se guardan en la nube"); setTimeout(pull, 0);
+    session = res.data.session; closeSheet(); toast("Listo. Tus datos ahora se guardan en la nube"); setTimeout(sync, 0);
   } catch(e){ msg(navigator.onLine === false ? "Sin internet. Intenta cuando tengas conexión." : "No se pudo conectar. Intenta de nuevo.", true); }
 }
 function backupHtml(){
@@ -973,13 +1046,29 @@ const sessById = id => state.sessions.find(s => s.id === id);
 const letter = i => String.fromCharCode(65 + i);
 const sessLabel = s => "Sesión " + letter(state.sessions.indexOf(s));
 /* Ejercicios de una sesión en un día, aplicando los cambios "solo hoy" (log.swap = {original: reemplazo}). */
-function dayIds(k, sess){
-  const sw = (state.logs[k] && state.logs[k].swap) || {}, out = [];
+function planOf(log, sess){
+  const sw = (log && log.swap) || {}, out = [];
   for (const id of sess.items){ const x = sw[id] || id; if (!out.includes(x)) out.push(x); }
   return out;
 }
+function dayIds(k, sess){ return planOf(state.logs[k], sess); }
+/* Cada día guarda la lista de ejercicios que le tocaba (log.items). Hoy se sigue calculando con la rutina actual;
+   los días pasados quedan como fueron, así cambiar la rutina después no les quita puntos ni sesiones completas. */
+function freezeDays(s){
+  const tk = key(fNow());
+  for (const k of Object.keys(s.logs || {})){
+    const l = s.logs[k]; if (!l || !l.session || (k < tk && Array.isArray(l.items))) continue;
+    const sess = (s.sessions || []).find(x => x.id === l.session); if (sess) l.items = planOf(l, sess);
+  }
+}
+function dayPlan(k){
+  const log = state.logs[k]; if (!log) return null;
+  if (Array.isArray(log.items) && k < key(fNow())) return log.items;
+  const sess = log.session ? sessById(log.session) : null;
+  return sess ? dayIds(k, sess) : Array.isArray(log.items) ? log.items : null;
+}
 function dayStats(k){
-  const log = state.logs[k], sess = log && log.session ? sessById(log.session) : null, its = sess ? dayIds(k, sess) : null;
+  const log = state.logs[k], its = dayPlan(k);
   let done = 0;
   if (log && log.done){ const ids = Object.keys(log.done).filter(id => log.done[id]); done = its ? ids.filter(id => its.includes(id)).length : ids.length; }
   const total = its ? its.length : ((log && log.total) || 0);
@@ -1466,7 +1555,12 @@ function pexInit(k){
   const l = state.logs[k] || {}, sess = sessionFor(k);
   return {sess: sess ? sess.id : null, done: Object.assign({}, l.done || {}), loads: Object.assign({}, l.loads || {}), effort: Object.assign({}, l.effort || {})};
 }
-function pexItems(){ const s = editDay && sessById(editDay.ex.sess); return s ? dayIds(editDay.key, s).filter(id => exById(id)) : []; }
+function pexItems(){
+  if (!editDay) return [];
+  const l = state.logs[editDay.key], s = sessById(editDay.ex.sess);
+  const ids = l && l.session === editDay.ex.sess && Array.isArray(l.items) ? l.items : s ? dayIds(editDay.key, s) : [];
+  return ids.filter(id => exById(id));
+}
 function pexDirty(){
   const d = editDay; if (!d || !d.ex) return false;
   const l = state.logs[d.key] || {}, x = d.ex, o = pexInit(d.key);
@@ -1522,7 +1616,8 @@ function commitEdit(){
   const st0 = dayStats(d.key), lv0 = level().n, wk0 = weekMet(monday(parseKey(d.key)));
   const x = d.ex, items = pexItems();
   if (x && items.length && (items.some(id => x.done[id]) || log.session)){
-    log.session = x.sess; log.loads = log.loads || {}; log.effort = log.effort || {};
+    if (log.session !== x.sess){ const s = sessById(x.sess); log.session = x.sess; if (s) log.items = dayIds(d.key, s); }
+    log.loads = log.loads || {}; log.effort = log.effort || {};
     for (const id of items){
       if (x.done[id]){ log.done[id] = true; const ld = (x.loads[id] || "").trim(); if (ld) log.loads[id] = ld; else delete log.loads[id]; if (x.effort[id]) log.effort[id] = x.effort[id]; else delete log.effort[id]; }
       else { delete log.done[id]; delete log.loads[id]; delete log.effort[id]; if (log.sets) delete log.sets[id]; if (log.reps) delete log.reps[id]; }
@@ -2070,7 +2165,13 @@ function chipsKeep(root){
     else if (r > c.scrollLeft + c.clientWidth) c.scrollLeft = r - c.clientWidth + 8;
   });
 }
+/* Si la app queda abierta y cambia el día (a las 4 a. m.), Hoy se redibuja solo al volver a mirarla. */
+let shownDay = "";
+function dayCheck(){ const k = key(fNow()); if (!shownDay || k === shownDay) return; shownDay = k; refreshOpen(); }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") dayCheck(); });
+setInterval(dayCheck, 60000);
 function render(){
+  shownDay = key(fNow());
   const v = $("#view"), keep = chipsKeep(v);
   v.innerHTML = tab === "hoy" ? viewHoy() : tab === "progreso" ? viewProgreso() : viewRutina();
   keep();
@@ -2112,6 +2213,7 @@ function openSheet(html, focusSel){
   clearTimeout(sheetHideT); fisioOn = false; sh.classList.remove("full");
   const keep = chipsKeep(sh);
   sh.innerHTML = '<div class="grab" aria-hidden="true"></div>' + html;
+  const ttl = sh.querySelector("h3"); if (ttl) sh.setAttribute("aria-label", ttl.textContent); else sh.removeAttribute("aria-label");
   keep();
   sheetOpen = true; sc.hidden = false;
   const same = was && oldH !== null && sh.querySelector("h3") && sh.querySelector("h3").textContent === oldH;
@@ -2689,7 +2791,7 @@ document.addEventListener("click", ev => {
   if (d.login !== undefined){ loginSheet(); return; }
   if (d.signin !== undefined){ doAuth("in"); return; }
   if (d.signup !== undefined){ doAuth("up"); return; }
-  if (d.syncnow !== undefined){ (dirty ? push() : pull()).then(() => { if (sheetOpen && !detailId) accountSheet(); }); return; }
+  if (d.syncnow !== undefined){ sync().then(() => { if (sheetOpen && !detailId) accountSheet(); }); return; }
   if (d.signout !== undefined){
     if (t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Toca otra vez para cerrar sesión"; return; }
     if (sb) sb.auth.signOut().catch(() => {}); session = null; setSync("nologin"); closeSheet(); toast("Sesión cerrada"); return;

@@ -32,7 +32,7 @@ server.listen(8788,async()=>{
  const tmsg=await p.locator('#toast').innerText(); console.log('toast after 3:', tmsg); ok(/Día cumplido: \+\$5\.000 a tu fondo/.test(tmsg),'day counts toast');
  ok(/Hoy ya sumaste \$5\.000/.test(await p.locator('.next.fundline').innerText()),'fund line updated');
  const st=await p.evaluate(()=>JSON.parse(localStorage.getItem('fibra-state-v1')));
- ok(st.v===8 && st.fundStart==='2026-10-10' && st.rewards.length===1 && st.rewards[0].text==='Mi premio propio','migration removed seeded rewards '+JSON.stringify(st.rewards.map(r=>r.text)));
+ ok(st.v===9 && st.fundStart==='2026-10-10' && st.rewards.length===1 && st.rewards[0].text==='Mi premio propio','migration removed seeded rewards '+JSON.stringify(st.rewards.map(r=>r.text)));
  // simulate earlier days this week (Mon-Thu) counting and week met, but fundStart today so they shouldn't count as days; week counts when met
  await p.evaluate(()=>{ const s=JSON.parse(localStorage.getItem('fibra-state-v1')); const sid=s.sessions[0].id; const all=Object.fromEntries(s.sessions[0].items.map(i=>[i,true]));
    ['2026-10-06','2026-10-07','2026-10-08'].forEach(k=>s.logs[k]={done:all,session:sid}); localStorage.setItem('fibra-state-v1',JSON.stringify(s)); });
