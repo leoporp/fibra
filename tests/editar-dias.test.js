@@ -18,7 +18,7 @@ server.listen(8787,async()=>{
  await p.goto('http://localhost:8787/start'); await p.goto('http://localhost:8787/'); await p.waitForTimeout(300);
  // seed: yesterday log with pain, today saved at 0 via UI
  await p.evaluate(()=>{ const s=JSON.parse(localStorage.getItem('fibra-state-v1')||'null'); });
- await p.locator('#p-painL').fill('0'); await p.locator('#p-painR').fill('0'); await p.locator('#d-save').click();
+ await p.locator('#p-painL [data-painv="painL:0"]').click(); await p.locator('#p-painR [data-painv="painR:0"]').click(); await p.locator('#d-save').click();
  await p.evaluate(()=>{ const s=JSON.parse(localStorage.getItem('fibra-state-v1')); s.logs['2026-10-09']={done:{},painL:2,painR:4,ice:true,breaks:3,note:'teclado',savedAt:1}; s.logs['2026-10-01']={done:{}}; localStorage.setItem('fibra-state-v1',JSON.stringify(s)); });
  await p.reload(); await p.waitForTimeout(300);
  const draftBefore=await p.evaluate(()=>localStorage.getItem('fibra-draft'));
@@ -33,9 +33,9 @@ server.listen(8787,async()=>{
  await p.locator('.dayrow').nth(1).scrollIntoViewIfNeeded(); await p.screenshot({path:__dirname+'/shots/'+scheme+'_hist.png'});
  // edit yesterday
  await p.locator('.dayrow').nth(1).click(); await p.waitForTimeout(200);
- ok(await p.locator('#e-painL').inputValue()==='2','sheet prefilled painL');
+ ok(await p.locator('#e-painL .pb.on').innerText()==='2','sheet prefilled painL');
  ok(await p.locator('#e-save').isDisabled(),'save disabled initially');
- await p.locator('#e-painL').fill('5');
+ await p.locator('#e-painL [data-painv="painL:5"]').click();
  ok(/Cambios sin guardar/.test(await p.locator('#e-status').innerText()),'dirty');
  await p.locator('.sheet [data-med="heat"]').click(); await p.locator('.sheet [data-breaks="5"]').click(); await p.locator('#e-note').fill('teclado y mouse');
  // Hoy controls untouched by sheet
@@ -52,7 +52,7 @@ server.listen(8787,async()=>{
  // add a day without data (Oct 7) → +5
  const r7=p.locator('.dayrow[data-editday="2026-10-07"]'); await r7.click(); await p.waitForTimeout(150);
  ok(await p.locator('[data-clearday]').count()===0,'no delete button for empty day');
- await p.locator('#e-painR').fill('3'); await p.locator('#e-save').click(); await p.waitForTimeout(100);
+ await p.locator('#e-painR [data-painv="painR:3"]').click(); await p.locator('#e-save').click(); await p.waitForTimeout(100);
  ok(/\+5/.test(await p.locator('#toast').innerText()),'+5 on new day: '+await p.locator('#toast').innerText());
  // delete yesterday
  await p.locator('.dayrow[data-editday="2026-10-09"]').click(); await p.waitForTimeout(150);

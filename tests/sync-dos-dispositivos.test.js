@@ -34,7 +34,7 @@ server.listen(8793,async()=>{
  // phone: has local data from earlier days
  const phone=await device();
  await phone.evaluate(()=>{ const s=JSON.parse(localStorage.getItem('fibra-state-v1')||'null'); });
- await phone.locator('[data-toggle]').first().click(); await phone.locator('#p-painL').fill('3'); await phone.locator('#p-painR').fill('2'); await phone.locator('#d-save').click();
+ await phone.locator('[data-toggle]').first().click(); await phone.locator('#p-painL [data-painv="painL:3"]').click(); await phone.locator('#p-painR [data-painv="painR:2"]').click(); await phone.locator('#d-save').click();
  await phone.evaluate(()=>{ const s=JSON.parse(localStorage.getItem('fibra-state-v1')); s.logs['2026-10-09']={done:{},painL:4,painR:4,savedAt:5,ice:true}; s.spends=[{id:'sp1',d:'2026-10-10',amount:3000,what:'café'}]; localStorage.setItem('fibra-state-v1',JSON.stringify(s)); });
  await phone.reload(); await phone.waitForTimeout(300);
  // computer signs up FIRST (the risky order)

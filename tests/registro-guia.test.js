@@ -13,7 +13,7 @@ server.listen(8791,async()=>{
  const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block',deviceScaleFactor:2}); const p=await ctx.newPage(); p.on('pageerror',e=>errors.push(e.message));
  await p.clock.install({time:new Date('2026-10-10T21:00:00-05:00')});
  await p.goto('http://localhost:8791/'); await p.waitForTimeout(300);
- await p.locator('#p-painL').fill('2'); await p.locator('#p-painR').fill('3');
+ await p.locator('#p-painL [data-painv="painL:2"]').click(); await p.locator('#p-painR [data-painv="painR:3"]').click();
  ok(/Leve: apareció con algún esfuerzo/.test(await p.locator('#p-a-painL').innerText()),'anchor updates for 2');
  ok(/Molesto/.test(await p.locator('#p-a-painR').innerText()),'anchor updates for 3');
  await p.locator('[data-med="ice"]').click(); await p.locator('[data-breaks="4"]').click();
@@ -22,8 +22,8 @@ server.listen(8791,async()=>{
  const mini=await p.locator('.regmini').innerText(); console.log(mini); ok(/Dolor izq\. 2, der\. 3 · hielo · pausas: casi todas/.test(mini),'mini summary');
  await p.locator('.regmini').scrollIntoViewIfNeeded(); await p.screenshot({path:__dirname+'/shots/L16_regmini.png'});
  await p.locator('[data-regopen]').click(); await p.waitForTimeout(100);
- ok(await p.locator('#p-painL').inputValue()==='2','open shows form with values');
- await p.locator('#p-painL').fill('1'); await p.reload(); await p.waitForTimeout(200);
+ ok(await p.locator('#p-painL .pb.on').innerText()==='2','open shows form with values');
+ await p.locator('#p-painL [data-painv="painL:1"]').click(); await p.reload(); await p.waitForTimeout(200);
  ok(await p.locator('#p-painL').count()===1,'dirty draft keeps form open after reload');
  await p.locator('#d-save').click(); await p.waitForTimeout(100); ok(await p.locator('.regmini').count()===1,'compact again');
  // guide from Hoy
